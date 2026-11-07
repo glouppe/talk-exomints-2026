@@ -423,7 +423,8 @@ class: middle
 </video>
 ]
 
-
+The density is exact, by the change of variables, with $u = t\_3 \circ t\_2 \circ t\_1(\theta)$:
+$$\log q\_\phi(\theta | x) = \log \mathcal{N}(u; 0, I) + \sum\_{k=1}^{3} \log \left| \det J\_{t\_k} \right|.$$
 
 ???
 
@@ -431,7 +432,7 @@ What does the network look like? Two parts.
 
 First, an embedding network reads the spectrum and compresses it into a few features. It learns which parts of the spectrum matter, instead of hand-crafted summaries.
 
-Second, a normalizing flow. It is a change of variables: an invertible function maps the parameters $\theta$ to a variable $u$ which follows a standard Gaussian. The function is a stack of three spline transforms, and their parameters depend on the features of $x$. Because the map is invertible with a tractable Jacobian, the density of $\theta$ follows from the change of variables formula: the Gaussian density of $u$, times the Jacobian determinant. That is exactly what the loss needs. And to sample, we draw $u$ from the Gaussian and invert the map.
+Second, a normalizing flow. It is a change of variables: an invertible function maps the parameters $\theta$ to a variable $u$ which follows a standard Gaussian. The function is a stack of three spline transforms, and their parameters depend on the features of $x$. Because the map is invertible with a tractable Jacobian, the density of $\theta$ follows from the change of variables formula: the Gaussian density of $u$, times the Jacobian determinant of each transform. In logs, a sum, as written below the figure. That is exactly what the loss needs. And to sample, we draw $u$ from the Gaussian and invert the map.
 
 Under the flow, real samples for our observed spectrum, pushed through the three trained layers: the tilted posterior of the internal temperature and the C/O ratio becomes, step by step, a round Gaussian.
 
@@ -697,7 +698,7 @@ class: middle
 ## Flow matching posterior estimation (FMPE)
 
 .center[
-<video poster="figures/fm-flow.png?v=2" muted loop autoplay playsinline class="anim" style="width: 62%;">
+<video poster="figures/fm-flow.png?v=2" muted loop autoplay playsinline class="anim" style="width: 50%;">
 <source src="figures/videos/fm-flow.mp4?v=2" type="video/mp4">
 </video>
 ]
@@ -705,7 +706,8 @@ class: middle
 Train the vector field $v\_\phi$ by regression, along straight paths $\theta\_t = (1-t)\, \theta\_0 + t\, \theta$ from noise $\theta\_0 \sim \mathcal{N}(0, I)$ to $\theta$:
 $$\min\_\phi \; \mathbb{E}\_{t \sim \mathcal{U}(0,1),\; \theta\_0 \sim \mathcal{N}(0, I),\; (\theta, x) \sim p(\theta, x)} \left[ \left\Vert v\_\phi(\theta\_t, t; x) - (\theta - \theta\_0) \right\Vert^2 \right].$$
 
-Sampling integrates $\dot{\theta}\_t = v\_\phi(\theta\_t, t; x)$ from $t=0$ to $1$. The density is still exact, through the continuous change of variables.
+Sampling integrates $\dot{\theta}\_t = v\_\phi(\theta\_t, t; x)$ from $t = 0$ to $1$. The density is exact, by the continuous change of variables:
+$$\log q\_\phi(\theta | x) = \log \mathcal{N}(\theta\_0; 0, I) - \int\_0^1 \nabla \cdot v\_\phi(\theta\_t, t; x) \, dt.$$
 
 .footnote[[Dax et al](https://arxiv.org/abs/2305.17161), NeurIPS 2023. Animation: the exact flow-matching vector field towards a two-mode target.]
 
@@ -713,7 +715,7 @@ Sampling integrates $\dot{\theta}\_t = v\_\phi(\theta\_t, t; x)$ from $t=0$ to $
 
 The animation shows a continuous flow: the samples move along a vector field that changes smoothly with time, from noise to a posterior with two modes. How is the vector field trained? By flow matching. Take a sample of noise, and a pair of parameters and spectrum from the simulator. Draw the straight line between the noise and the parameters. At a random time along the line, the network should point along the line. It is a simple regression: no invertibility constraint on the network, which makes it more flexible and easier to scale.
 
-To sample, we start from noise and follow the vector field, by solving an ODE. And the density can still be computed exactly, which matters for what comes next.
+To sample, we start from noise and follow the vector field, by solving an ODE. And the density can still be computed exactly, which matters for what comes next. Compare with the discrete flow: there, the Gaussian density was corrected by the log-determinant of the Jacobian of each transformation. Here, the same idea in the limit of infinitely many infinitesimal steps: the sum becomes an integral, and the log-determinant becomes the divergence of the vector field, the trace of its Jacobian, along the path.
 
 ---
 
