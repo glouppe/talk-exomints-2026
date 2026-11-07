@@ -751,7 +751,7 @@ class: middle
 
 <img src="figures/mc-bayes.png" style="display: block; margin: 0 auto; width: 46%;">
 
-The Bayes factor $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ compares the evidence of the two models. Three ways to estimate it:
+The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ compares the evidence of the two models. Three ways to estimate it:
 
 <div class="evidence-rows">
 <div><span>Nested sampling</span>$$p(x|M) \approx \sum_i p(x|\theta_i, M) \, \Delta X_i$$</div>
