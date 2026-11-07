@@ -870,14 +870,19 @@ Reviews
 
 Simulation-based inference for exoplanets
 
+- Márquez-Neila et al, [Supervised machine learning for analysing spectra of exoplanetary atmospheres](https://arxiv.org/abs/1806.03944), Nature Astronomy 2018.
+- Haldemann et al, [Exoplanet characterization using conditional invertible neural networks](https://arxiv.org/abs/2202.00027), A&A 2023.
 - Vasist et al, [Neural posterior estimation for exoplanetary atmospheric retrieval](https://arxiv.org/abs/2301.06575), A&A 2023.
+- Aubin et al, [Simulation-based inference for exoplanet atmospheric retrieval: insights from winning the Ariel Data Challenge 2023](https://arxiv.org/abs/2309.09337), 2023.
+- Ardévol Martínez et al, [FlopPITy: enabling self-consistent exoplanet atmospheric retrievals with machine learning](https://arxiv.org/abs/2401.04168), A&A 2024.
 - Gebhard et al, [Flow matching for atmospheric retrieval of exoplanets](https://arxiv.org/abs/2410.21477), A&A 2025.
+- Lueber et al, [Near-instantaneous atmospheric retrievals and model comparison with FASTER](https://arxiv.org/abs/2502.18045), ApJL 2025.
 - Vasist et al, [Panchromatic characterization of the Y0 brown dwarf WISE 1738 using JWST/MIRI](https://arxiv.org/abs/2507.12264), A&A 2025.
 ]
 
 ???
 
-If you want to go further. Our review with Max is the most direct follow-up to this tutorial. The PNAS paper is a short overview of the field. The practical guide covers the workflow in detail, and the tutorial review covers diffusion and flow-matching estimators. And the three exoplanet papers we showed.
+If you want to go further. Our review with Max is the most direct follow-up to this tutorial. The PNAS paper is a short overview of the field. The practical guide covers the workflow in detail, and the tutorial review covers diffusion and flow-matching estimators. Then simulation-based inference for exoplanets, in order: the first retrievals trained on simulations, with random forests; interiors with invertible networks; neural posterior estimation for atmospheres; the Ariel data challenge; sequential NPE with self-consistent models; flow matching; neural ratio estimation with model comparison; and JWST data.
 
 ---
 
