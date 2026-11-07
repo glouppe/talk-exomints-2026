@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulation-based inference for exoplanets</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./assets/fonts.css">
+    <link rel="stylesheet" href="./assets/katex.min.css">
+    <link rel="stylesheet" href="./assets/style.css">
+    <link rel="stylesheet" href="./assets/grid.css">
+  </head>
+  <body>
+    <script src="./assets/remark.min.js"></script>
+    <script src="./assets/katex.min.js"></script>
+    <script src="./assets/auto-render.min.js"></script>
+
+    <script>
+      // The page always shows talk.md.
+      var deck = "talk.md";
+
+      function message(text) {
+        return "class: middle, center, title-slide\n\n# Simulation-based inference for exoplanets\n\n" + text;
+      }
+
+      // Preload the images, background images and videos of all slides, in slide order,
+      // so that changing slides does not wait for the network.
+      function preload() {
+        var urls = [];
+        document.querySelectorAll(".remark-slide-content").forEach(function (slide) {
+          var bg = slide.style.backgroundImage.match(/url\(["']?([^"')]+)["']?\)/);
+          if (bg) urls.push(new URL(bg[1], document.baseURI).href);
+          slide.querySelectorAll("img").forEach(function (img) { urls.push(img.src); });
+          slide.querySelectorAll("video").forEach(function (video) {
+            video.preload = "auto";
+            if (video.poster) urls.push(video.poster);
+          });
+        });
+        urls = urls.filter(function (url, i) { return url && urls.indexOf(url) === i; });
+        window.preloaded = [];
+        var next = 0;
+        function load() {
+          if (next >= urls.length) return;
+          var img = new Image();
+          img.onload = img.onerror = load;
+          img.src = urls[next++];
+          window.preloaded.push(img);
+        }
+        for (var k = 0; k < 4; k++) load();   // four downloads at a time
+      }
+
+      function start(source) {
+        remark.create({source: source, highlightStyle: "tomorrow"}, function () {
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: "$$", right: "$$", display: true},
+              {left: "$", right: "$", display: false},
+              {left: "\\[", right: "\\]", display: true},
+              {left: "\\(", right: "\\)", display: false},
+            ]
+          });
+          preload();
+        });
+      }
+
+      fetch(deck)
+        .then(function (response) {
+          if (!response.ok) throw new Error(response.status + " " + response.statusText);
+          return response.text();
+        })
+        .then(start, function (error) {
+          start(message("Could not load `" + deck + "` (" + error.message + ")."));
+        });
+    </script>
+  </body>
+</html>

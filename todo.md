@@ -1,0 +1,195 @@
+# TODO
+
+Exomints 2026 tutorial, November 10, 2026: *Simulation-based inference* for exoplanet scientists. Speakers: Gilles Louppe and Max Dax. 45 minutes.
+
+This file is the state of the project. Read it first at the start of every session; update it whenever a task is done, a decision is taken or a question is opened. Item IDs are stable: never renumber, only add.
+
+## State
+
+- **Phase:** all five topics drafted; 39 slides. Remaining: misspecification (T4.3), reporting checklist (T4.5, optional), literature map (T3.4, with Max), split with Max (Q2), then the finishing pass (E1–E3). Over the soft target (35): trimming candidates are the 4 walk-through builds, the flows slide (29), and one of the two IS slides.
+- **Current deck (displayed numbers; 17 has a second build):** 1 title · 2–4 ocean · 5–7 gravitational waves · 8–10 exoplanets · 11 inverse problems · 12 generation/inference table · 13–16 toy walk-through · 17 galaxy (+ NPE/FMPE build) · 18 NPE loss (normalizing flow) · 19 NPE pipeline · 20 training · 21 amortization gallery · 22 observed spectrum · 23 NPE vs MCMC corner · 24 calibration (+ TARP, MIRA, L-C2ST) · 25 trust crisis (coverage crisis, BNPE) · 26 posterior predictive check · 27 Vasist et al 2023 · 28 WISE 1738 · 29 discrete vs continuous flows · 30 flow matching · 31 Gebhard et al 2025 · 32 cheat code: importance sampling · 33 IS corner · 34 model comparison (cloudy vs clear, PPC + residuals) · 35 three ways to the evidence · 36 model comparison, amortized (survey) · 37 take-home messages · 38 reading list · 39 closing equation + "The end."
+- **Next action:** misspecification slide (T4.3) on the toy: simulate a spectrum with a feature the simulator lacks (e.g. an extra absorber or a stellar contamination slope), show NPE confidently wrong, calibration blind to it, and the posterior predictive check flagging it; the noise-model point goes there too. Then E1 (notes pass).
+- **Font rule (Gilles):** figures must appear on screen at the same size as slide 15 (walk-through: 20 pt in 1600 px shown at 852 px ≈ 15 px labels, 20 px titles). Measure displayed widths with `.render/measure.py <slides>` and set each figure's font size accordingly. Exception: the galaxy (labels kept small for density).
+- **Blocked on Max:** split of the topics (Q2), literature map (T3.4), his photo choice (K7). Possibly: whether he presents FMPE (29–31) and model comparison (34–36).
+- **Regenerating toy figures** (TOY_OUT=.render/data/toy-big/, venv `.render/venv`): `toy_npe.py observe`; `toy_results.py {xobs,corner,gallery,coverage_anim,is_anim,is_corner}`; `npe_architecture.py`; `toy_training.py`; `~/anaconda3/bin/python tools/toy_walkthrough.py --ppc`. Bump `?v=` on changed media.
+- **Last updated:** 2026-11-07.
+
+## Decisions
+
+- **D1.** Scope, agreed with Max. Five topics:
+  1. **Forward model ↔ inference.** The physics (forward model) and the instrument (noise model) define the likelihood; the inference is separate. The audience sees "a retrieval method" as one block (e.g. petitRADTRANS + MultiNest); the tutorial decouples them.
+  2. **Methods.** Mention the landscape (ABC, NLE, NRE, NPE, sequential variants), only explain NPE, including the architecture: normalizing flows, possibly diffusion / flow matching.
+  3. **Guiding example** grounded in exoplanets, carried through the whole tutorial.
+  4. **What can go wrong**, and diagnostics.
+  5. **Model comparison.**
+- **D2.** Format: 45 minutes in total, both speakers, lecture only. A companion notebook remains possible as take-home material.
+- **D3.** Slide count: about 35, a soft target. Draft freely, trim at the end; the asides go first (pitcher, LHC, stellar streams, BNRE details, Box's loop, outlook). Indicative budget:
+
+  | Part | Planned | Now | Content now |
+  |---|---|---|---|
+  | Opening | 10 | 11 | title, ocean (3), gravitational waves (3), exoplanets (3), inverse problems |
+  | 1. Forward model ↔ inference | 3 | 5 | generation/inference table, toy walk-through (4 builds) |
+  | 2. Methods | 8 | 9 | galaxy, NPE, pipeline, training, amortization; flows, FMPE, Gebhard et al, importance sampling (2) |
+  | 3. Guiding example | 2 | 6 | x_obs, corner, Vasist 2023, WISE 1738 (+ calibration and PPC, counted in topic 4) |
+  | 4. What can go wrong | 7 | 2 | calibration, PPC (so far) |
+  | 5. Model comparison | 5 | 0 | |
+  | Conclusions | 2 | 0 | no thank-you slide (C2) |
+  | **Total** | **37** | **33** | |
+
+- **D4.** Template: the Flatiron deck, including its `style.css`, `index.html` and `.render/` tools. Mainz only for figures that Flatiron cut.
+- **D5.** Repo: fresh, no git history. Name `talk-exomints-2026`.
+- **D6.** Opening: same structure as Flatiron (examples, then generalization; see D14), but each example goes from the observation, to the latent state, to the parameters of the physics, and the opening ends on $p(\theta \mid x)$.
+- **D7.** Guiding example: Vasist et al 2023, *Neural posterior estimation for exoplanetary atmospheric retrieval*, A&A 672, A147 (arXiv:2301.06575; Vasist, Rozet, Absil, Mollière, Nasedkin, Louppe). petitRADTRANS (scattering, clouds), neural autoregressive flow, MultiNest baseline, retrievals in a few seconds, PPC and coverage. Follow-up on real JWST data: WISE 1738+2732 with JWST/MIRI (Vasist et al 2025, arXiv:2507.12264).
+- **D8.** Audience: PhD students and researchers in exoplanet science. They know retrievals (petitRADTRANS, nested sampling, corner plots); assume little deep learning. Explain networks and flows from scratch; do not explain Bayes' theorem or retrievals.
+- **D9.** Title slide: Exomints 2026, November 10, 2026; Gilles Louppe and Max Dax, with faces.
+- **D10.** Split between Gilles and Max: decided later. Until then, draft one deck covering everything.
+- **D12.** Title (Q7): *Simulation-based inference for exoplanets*, no subtitle (Gilles' choice; the proposed *If you can simulate it, you can retrieve it* is dropped).
+- **D13.** Notation (closes K6): the usual SBI convention. $\theta$ parameters, $z$ latents, $x$ observation; the chain is $\theta \to z \to x$, the target $p(\theta \mid x)$. Matches INFO8004, the SBI literature and, likely, Max's slides. The Flatiron opening uses $y$ observation and $x$ state: rewrite its captions and notes ($y \to x$, $x \to z$) when reusing them (O1–O4).
+- **D14.** Three examples, each in three slides $x \to z \to \theta$, every caption starting with an italic "Observations:", "Latent states:" or "Parameters:" (Gilles' request), in the Flatiron/Mainz style: full-bleed illustrative image or animation with an overlay caption box and a credit footnote. No plots in the examples (Gilles: "very illustrative slides like the gw merger video are great; showing plots isn't for those examples").
+  - Ocean currents (replaces the Kolmogorov toy, Gilles' request; easy to explain, real flow; all three caption boxes top-left): $x$ = real sea surface height from 7 altimeters, Gulf Stream off North Carolina, January 21, 2023 (NASA/JPL-Caltech/Copernicus Marine Service, PIA25773; `ocean-x.jpg`), replacing a block-averaged version of the simulation (Gilles: it would not correspond to an observation from above). Alternative kept in `.render/data/`: PIA25772, the same scene seen by SWOT at 10× the resolution; currents $z$ = NASA SVS 3827 *Perpetual Ocean* (ECCO2), Gulf Stream, 10 s loop from 0:20 (`videos/ocean-z.mp4`); $\theta$ = global constants of the ocean model: three simulations at three viscosities, side by side (Q9). Source video in `.render/data/` (450 MB, not tracked).
+  - Gravitational waves (Max's field; all three caption boxes top-left, Gilles' request): animated wavelet spectrogram of GW150914, LIGO Hanford, with the band-passed strain time series overlaid in white (`videos/gw-x.mp4`, `tools/gw_spectrogram.py`, GWOSC data); NASA SVS 13197 merger simulation, 20 s loop (`videos/gw-z.mp4`); spinning-binary artwork, LIGO/Caltech/MIT/Sonoma State (A. Simonnet) (`gw-theta.jpg`).
+  - Exoplanets (guiding example, last; all three caption boxes bottom-left, Gilles' request): HR 8799 direct-imaging time-lapse, J. Wang/C. Marois, CC BY 3.0 (`videos/exo-x.mp4`), with an inset of the Vasist et al 2023 benchmark spectrum, extracted from the vector PDF (`exo-x-spectrum.png`, `tools/exo_spectrum.py`, run with `uvx --from pymupdf --with numpy --with matplotlib`); VHS 1256 b clouds illustration, NASA/ESA/CSA/J. Olmsted (`exo-z.jpg`; image shifted up by 300 px with the bottom strip filled by mirrored starfield, so the caption box clears the planet); ten hot Jupiters from clear to cloudy, ESA/Hubble & NASA, heic1524a, Sing et al 2016 (`exo-theta.jpg`, lineup fitted to the width, mirrored fading starfield below for the caption box): same physics, different $\theta$, different atmospheres. Replaced the HL Tauri disc, whose link to $\theta$ was indirect.
+  - Dropped: black holes (hard to explain), lensing, Earth observation.
+- **D15.** Guiding-example section (Q10) uses a minimal toy simulator in numpy, not petitRADTRANS (Gilles: minimalistic, no time to regenerate big datasets or retrain big NPEs): ~6 parameters (internal temperature, log g, metallicity, C/O, cloud-top pressure, radius); analytic grey P–T profile; simple CO/CH4/H2O chemistry; schematic molecular bands at their real wavelengths, CIA continuum, grey cloud deck; 1D emission; binning to R ≈ 100 and Gaussian noise. Milliseconds per spectrum, so a small NPE (~10^5 simulations) trains in minutes, and an MCMC on the tractable toy likelihood can serve as reference. The slides say it is a toy; the Vasist et al 2023 figures remain the real-world result. Code: `tools/toy_exo.py`. Runs locally; alan only if training is slow.
+- **D16.** Toy NPE: final model trained on alan, 5·10^5 pairs, 200 epochs, NSF 3×[256,256] + MLP embedding (valid loss −8.23, vs −7.15 for the first 10^5-pair model, which was visibly too wide). References on the same x_obs (seed 7): MCMC (8 chains × 20k, ~9 min) and importance sampling (ε ≈ 0.57–0.61, log Ẑ = −55.79); nested sampling (dynesty) pending.
+- **D17.** Paper slides (26, 27, 30): paper header (title + authors cropped from page 1, link boxes hidden), author faces top-right (with a "…" avatar when some are missing), 1–2 key figures, no bullet text, short footnote with the reference. Vasist 2023 is a proof of concept on a simulated benchmark; WISE 1738 is the real-data application.
+- **D18.** `count: false` only for builds of the same slide (galaxy build, end slide), never for follow-up slides (Gilles).
+- **D19.** Calibration tests the inference network; the posterior predictive check tests the forward model (Gilles). Both slides say so; topic 4 builds on this split.
+- **D20.** Model comparison on the toy (topic 5): cloudy (6 parameters) vs clear (5, cloud deck at the bottom) simulators; one cloudy and one clear observation (`.render/data/toy-mc/`, `tools/toy_mc.py`). Evidence by IS with each model's NPE (clear NPE: 5·10^5 pairs, 200 epochs on alan) agrees with nested sampling (dynesty, 500 live points, on alan): cloudy planet log Z cloudy −55.79 (NS −55.90 ± 0.24), clear −75.81 (NS −75.86 ± 0.22); clear planet cloudy −73.48 (NS −73.50 ± 0.23), clear −72.32 (NS −72.39 ± 0.22). log B: +20.0 (IS, NS) and +6.9 (classifier, saturates) on the cloudy planet; −1.16 / −1.11 / −1.22 on the clear planet. Nested sampling cost on the cloudy planet: 1.1M likelihood calls, 57 min on 16 cores; IS: 50k calls. Classifier p(M|x): MLP, 4·10^5 pairs per model, accuracy 0.855; survey of 1,500 cloudy planets in 0.01 s shows clouds become undetectable below ~5 bar.
+- **D21.** Conclusions without icons, bold or a software slide (Gilles): plain numbered take-homes; reading list (Dax, Heimel and Louppe 2026, arXiv:2607.21702; Cranmer et al 2020; Deistler et al 2025; Arruda et al, arXiv:2512.20685; Vasist 2023; Gebhard 2025); the end merged into the closing-equation slide.
+- **D11.** Cut: the pitcher example (at most its code slide), the LHC, NRE details and the stellar streams case study, all diffusion and data assimilation content (Black Sea, SDA, LoLA, Appa), cryo-EM and MRI examples. The outlook is at most one sentence in the conclusions.
+
+## Open questions
+
+- [x] **Q10.** Proposed by Gilles, recommended: a new section right after the opening that walks the guiding example (Vasist et al 2023) slowly, forward then back, about 8 slides: (1) prior $p(\theta)$, the 16 parameters and their ranges; (2) physics $\theta \to z$, P–T profile, abundances, clouds, with a spread of prior draws; (3) radiative transfer $z \to$ clean spectrum (petitRADTRANS); (4) instrument, R = 400, S/N = 10, $\to x$; (5) simulate many pairs $(\theta_i, x_i)$; (6) decoupling (T1.3): all of this is the forward model, inference is a separate, swappable piece; (7) back through NPE, $q_\phi(\theta \mid x)$ (T2.3, T2.4); (8) result: NPE vs MultiNest and PPC (T3.2). It absorbs T1.1, T1.3 and T3.1, and merges topics 1–3 into one story. Slides 11–12 only give the generic chain, so T1.1 and T1.3 stay open until this section exists. Blocker for slides 1–5: real simulations (petitRADTRANS not installed, opacities are several GB); either ask Malavika/Max for a few hundred training pairs, or install pRT. Go given (Gilles), with T1.1 and T1.3; T1.5 skipped. Simulator: see D15.
+
+- [x] **Q9.** Slide 4 ($\theta$ for the ocean): the darkened ocean barely showed parameters, and the wind forcing $F$ is a field, closer to a latent state than to a parameter (Gilles). Now: same equations, different global constants. Three runs of 2D turbulence on a $\beta$-plane, same forcing, viscosity $\nu = 10^{-2}, 10^{-3}, 10^{-4}$, current speed in a blue palette, animated (`videos/ocean-theta.mp4`, `tools/ocean_theta.py`, about 7 min to render).
+
+- [ ] **Q2.** Split between Gilles and Max (D10). One deck or two? If Max brings his own slides, share the notation (D13) and the guiding example (D7).
+
+- [x] **Q8.** Title background: (B) WASP-39 b and its star, NASA, ESA, CSA, J. Olmsted (STScI), 3840×2160 (https://science.nasa.gov/asset/webb/exoplanet-wasp-39-b-and-its-star-illustration-2/), cropped to 4:3 from the left edge so the planet sits right of the title box; `figures/title-bg.jpg`; credit in the footnote. Rejected: HD 189733 b (busy), K2-18 b (hidden by the box), TRAPPIST-1, HIP 65426 b (labelled panels), WASP-96 b (low resolution).
+
+## Sources
+
+- **Flatiron** (`../2026 - Flatiron/`): the template (D4). Content off-topic, except the opening and the diffusion visuals (one sampling step).
+- **AI4Sci Mainz** (`../2026 - AI4Sci Mainz/`): parent of Flatiron. Figures Flatiron cut: faces (most complete set), `lens-x/y.png`, `sat-x/y.png`.
+- **gwfreeride** (`../2026 - gwfreeride/`, January 2026, astro audience): `talk-gwfreeride.md` (final), `talk2.md` (draft with the exoplanet slides, `exclude: true`, lines ~183–295). Older format: content and figures only.
+- **INFO8004** (`~/Documents/teaching/INFO8004 - Advanced Machine Learning/2025-2026/sbi/lecture-info8004.md`): introduction to SBI (simulators, intractable likelihoods, ABC, NRE, coverage, BNRE, NPE, flows).
+- **Dagstuhl 2022** (`../2022 - Dagstuhl/talk.md`, lines ~300–520): what can go wrong: coverage, coverage crisis, BNRE, prior checks, misspecification, PPC, Box's loop. Shorter versions in `2022 - Hammers and nails`, `2022 - LFI in Paris`, `2022 - Minerva`.
+- **PHYSTAT London 2024** (`../2024 - PHYSTAT London/`): figures `vasist-pipeline.png`, `vasist-structure.png`, `vasist-corner.png`, and Dax's (`dax-gw.png`, `dax-is.png`, `dax-gnpe.png`, ...).
+- **Reference only:** `../2026 - SBI in HEP/` (SBI blueprint, 2023); the 2019 talks (Oxford, GRAPPA, DESY) list Bayesian model comparison among the uses of NRE.
+
+## Pending
+
+### Fork (next)
+
+- [x] **K1.** From Flatiron: `index.html`, `assets/`, `.render/`, `figures/icons/`, `figures/logo-uliege-white.png`. Update the `<title>` and the fallback title. Done; only `.render/shot.py` kept (the other scripts were Flatiron one-offs). `shot.py` needs `websocket`: run it with `~/anaconda3/bin/python`, with `python3 -m http.server 8765` serving the folder.
+- [x] **K3.** Start `talk.md` from the Flatiron deck: keep the title slide (D9; new exoplanet background instead of `title-bg.gif`), the opening (O1–O4), the thank-you slide and the end slide; remove everything from "Diffusion models 101" on. Done: cryo-EM and MRI slides and rows removed (D11), the Flatiron closing-equation slide dropped, captions and notes switched to D13 notation, thank-you slide reduced to the Vasist et al 2023 authors.
+- [x] **K4.** Do not copy: videos, `steer/`, Kolmogorov GIFs (unless the teaser keeps them, O1), `title-bg.gif`, `pdf/`, `tools/`, `todo.md`, `feedback.md`. Exception: `title-bg.gif`, `x.png` and `videos/teaser-x.mp4` copied, since the teaser is kept until O1 is decided.
+- [x] **K5.** `git init`, `.gitignore` for `.render/` outputs and `chrome-cdp/`. GitHub remote `glouppe/talk-exomints-2026` once agreed. Done: repo initialized, files staged, no commit, no remote.
+- [x] **K7.** Title slide finished. Background: see Q8. Max: photo from his ELLIS Institute Tübingen profile (`figures/faces/maxdax.jpg`), email maximilian.dax@tuebingen.mpg.de (from Gilles). Logos: ELLIS Institute Tübingen (`figures/logo-ellis-white.png`, black parts recoloured white from the site logo) next to ULiège. `style.css`: subtitle on the title slide now smaller and lighter; date kept on one line. Title per D12. Logo heights rebalanced (ELLIS 1em, ULiège 1.5em) after Gilles found ULiège too big. Ask Max whether he prefers another photo or the MPI-IS logo too.
+- [ ] **K8.** First commit and GitHub remote: on Gilles' go.
+
+### Opening
+
+- [x] **O1.** First example: ocean currents (D14), which replaced the Kolmogorov teaser.
+- [x] **O2.** Gravitational waves: three slides (D14). Raw data in `.render/data/` (not tracked): GWOSC strain, GWTC-1 samples, NASA video, LIGO artwork, LIGO Livingston aerial photo (unused).
+- [x] **O3.** Exoplanets: three slides (D14). The Vasist et al 2023 benchmark is a simulated petitRADTRANS emission spectrum (0.95–2.45 μm, R = 400, S/N = 10, 16 parameters); its figures go to topics 2–4, not here.
+- [x] **O4.** Generalization: "Inverse problems in science" now targets $p(\theta \mid x)$ with $p(x \mid \theta) = \int p(x \mid z) p(z \mid \theta) \text{d}z$; `setup.svg`/`.drawio` relabelled $\theta \to z \to x$. Generation/inference table now has three stages, as Gilles asked: prior $p(\theta)$, physics $p(z \mid \theta)$, instrument $p(x \mid z)$, one row per example.
+
+### Topic 1: forward models and inference
+
+- [x] **T1.1.** Done with the toy simulator (D15): four builds of an animated walk-through θ → z → f(θ) → x (`tools/toy_walkthrough.py`, `videos/toy-walk-{1..4}.mp4`). The "Simulate many" slide became part of the training animation (slide 20). Was: The exoplanet simulator: $\theta$ → radiative transfer (physics) → instrument and noise → spectrum $x$, as one diagram with two boxes. Latents named in it: chemistry, clouds, stellar contamination, instrument systematics.
+- [x] **T1.3.** Dropped as redundant with slides 11–12 (Gilles); the point about noise models chosen to suit the sampler moves to the topic 2 algorithms slide. Previously: diagram slide (`forward-inference.svg`): prior → physics → instrument under a "forward model (simulator)" bracket, inference as one arrow back, no method named (Gilles: no spoilers, a later slide covers the algorithms; visual like slide 11, not verbose). The point about noise models chosen to suit the sampler is in the notes, to come back with the algorithms. Was: Decoupling, new: a retrieval = forward model + noise model + prior + inference algorithm. Today, the noise model is often chosen to keep the likelihood tractable (Gaussian, independent pixels). SBI only needs to simulate, so the noise model can be as realistic as the instrument can be simulated (correlated noise, systematics, offsets between instruments).
+- [x] **T1.5.** Skipped (Gilles).
+
+### Topic 2: methods, NPE only
+
+- [x] **T2.1.** Done as a "galaxy of inference algorithms" (Gilles' idea; `tools/galaxy.py`, `videos/galaxy-{1,2}.mp4`): six spiral arms, three classical (MCMC & co., nested sampling, ABC, blue) and three SBI (posterior, likelihood, ratio estimation, pink, longer), ~45 real algorithm names; build 2 dims all and makes NPE and FMPE pop (plays once). Caption box bottom-left, same caption on both builds. Names checked (Radev's methods added; amortized model comparison removed, see T5.2). Still to place: the noise-model point (T4.3). Was: Landscape, one or two slides: nested sampling and MCMC as the known baseline; ABC, NLE, NRE, NPE and sequential variants, one line each (`inference-algorithms.png`, `frontiers-sbi*.png`, Cranmer et al 2020).
+- [x] **T2.2.** Covered across slides (Gilles): amortization (results timings, gallery, coverage slide), no likelihood (NPE slide), cost of simulations (training notes). Two points moved to T4.3: realistic noise models (no tractable likelihood needed), and the fixed prior/instrument (retrain if they change). Was: What SBI buys: amortization (seconds per retrieval), realistic noise models, no likelihood. What it costs: training simulations, a fixed prior, a fixed instrument setup.
+- [x] **T2.3.** Slide "Neural posterior estimation": loss, why it targets the posterior (expected KL), no likelihood evaluated. Was: NPE: the loss $\min_\phi \mathbb{E}\_{p(\theta, x)}[-\log q\_\phi(\theta \mid x)]$, and why it targets the posterior (INFO8004 NPE slides, `npe-diagram.png`; gwfreeride `figures/sbi/fig1.png`). Software on the getting-started slide (lampe no longer maintained).
+- [x] **T2.4.** One pipeline figure (slide 19, `tools/npe_architecture.py`), in the spirit of Vasist et al 2023 Fig. 1: training/inference brackets, simulator box with $z \sim p(z|\theta)$, $x \sim p(x|z)$, prior, embedding MLP with real layer sizes, flow $t_1, t_2, t_3$ conditioned on $h(x)$, real posterior samples pushed through the trained layers to $u \sim \mathcal{N}(0, I)$, change-of-variables density, $x_{\rm obs}$ in, corner out. The separate normalizing-flow slide was dropped. Was: Architecture: embedding network for the spectrum + conditional density estimator; normalizing flows (`normalizing-flow.png`).
+- [x] **T2.5.** Slides 28–30: discrete vs continuous flows (Gebhard et al Fig. 1), flow matching (vector field, regression loss, ODE sampling; Dax et al 2023), FMPE for retrieval (Gebhard, Wildberger, Dax et al 2025: noise-level conditioning, importance sampling, corner and efficiency). Then importance sampling on the toy (slides 31–32). May become Max's part (Q2).
+
+### Topic 3: guiding example
+
+- [x] **T3.3.** Done: corner, PPC and coverage used on slide 26; the benchmark is simulated (Mollière et al 2020, HR 8799 e-like), 16 parameters, 12M simulations. Was: Reread Vasist et al 2023 and map each figure to a topic (simulator setup and parameter list, architecture, training set size, timings, coverage, PPC). Check the benchmark target and data.
+- [x] **T3.1.** Done for topics 1–3 with the toy (simulator, NPE, results, amortization, calibration, PPC, IS); topics 4–5 should keep using it (T4, T5.4). Was: Thread the example through every topic: simulator (topic 1), NPE (topic 2), PPC and coverage (topic 4), model comparison (topic 5).
+- [x] **T3.2.** Done: slides 26 (Vasist et al 2023, A&A 672, A147) and 27 (WISE 1738, Vasist et al 2025, A&A 703, A70). Was: Results: NPE vs. MultiNest (corner), posterior predictive (residuals), then WISE 1738+2732 with JWST/MIRI (gwfreeride `talk2.md`: `WISE1738.jpg`, `wise-spectra.png`, `wise-posterior.png`; check publication status of arXiv:2507.12264). Figures: INFO8004 `exoplanet-corner.png`, `exoplanet-residuals.png`, `corner-exoplanet.png`; PHYSTAT London `vasist-*.png`. Re-extract at higher resolution if needed.
+- [ ] **T3.4.** Literature map (one slide or a footnote): Vasist et al (2023, 2025), Gebhard et al, Ardévol Martínez et al, Yip et al, Aubin et al, ... Check and complete with Max.
+
+### Topic 4: what can go wrong
+
+- [x] **T4.1.** Done: slides 24 (calibration + stronger tests) and 25 (coverage crisis, BNPE; better overdispersed than overconfident). Was: (Calibration slide 24 now notes that coverage is necessary, not sufficient, and names TARP (Lemos et al 2023, ICML; necessary and sufficient), MIRA (Sharief et al, ICML 2026, arXiv:2605.02014; also usable for model comparison without the evidence, see T5.2) and L-C2ST (Linhart et al 2023).) (Placeholder slide 25 "When the network is wrong" holds the outline; replace with figures: small vs final toy model corner, coverage crisis, balancing.) (Done so far: calibration animation on the toy, slide 24, and coverage of Vasist et al, slide 26; still to do: the coverage crisis and conservative posteriors. Note: note for topic 4: calibrated on average ≠ exact for each x, cf. NPE wider than MCMC on x_obs with the small model.) The approximation is wrong: expected coverage (`coverage.png`), the coverage crisis (Hermans et al 2021, `coverage-crisis.png`, `posterior-large-small.png`), conservative posteriors (one slide, `balancing.png`). Also: comparison with nested sampling on a few spectra; importance sampling with the NPE proposal when the likelihood is available (Dax et al 2023).
+- [ ] **T4.2.** The prior is wrong: prior predictive checks (`prior-check.png`).
+- [ ] **T4.3.** (Also carry here from T2.2: SBI lets the noise model be as realistic as can be simulated; but prior and instrument are fixed at training time.) The forward or noise model is wrong: out-of-distribution observations, silent extrapolation (`coverage-misspecification.png`, `cannon-conclusion.png`, `hybrid.gif`). Exoplanet cases: missing opacities, clouds, stellar contamination, unmodelled systematics.
+- [x] **T4.4.** Done: slide 25, the walk-through animation driven by posterior draws over x_obs (tests the forward model, D19). Was: Posterior predictive checks (`ppc.png`; residuals of the guiding example).
+- [ ] **T4.5.** Checklist: what to report with an SBI retrieval (simulation budget, coverage, PPC, comparison with a likelihood-based baseline).
+
+### Topic 5: model comparison
+
+Nothing ready in previous decks. Placeholder slide 34 "Model comparison" holds the outline (question, Bayes factors, IS evidence, classifier p(M|x), caveats).
+- [x] **T5.1.** Done (slide 34, D20). Was: The question: is molecule X detected? Clouds or not? Equilibrium chemistry or not? Today: Bayes factors from nested sampling.
+- [x] **T5.2.** Done (slides 35–36, D20): IS evidence, nested sampling, classifier; MIRA cited. Was: (Route (b) is already shown on the toy: IS gives log Ẑ, slide 31; compare with nested sampling once it ends. Radev's amortized model comparison, evidential deep learning, was removed from the galaxy: it estimates p(M|x), not a parameter posterior; use it here.) SBI routes, to research: (a) model posterior $p(M \mid x)$ with a classifier on simulations from all models; (b) evidence from NPE via importance sampling (Dax et al 2023), when the likelihood is tractable; (c) evidence networks (Jeffrey and Wandelt 2023), learned harmonic mean (McEwen et al); (d) Bayes factors as ratios (NRE). (e) MIRA scores (Sharief et al 2026) compare models from joint samples, without computing the evidence. Pick one or two; ask Max.
+- [x] **T5.3.** In the notes of slide 36 (priors, misspecification) and 35 (classifier saturation). Was: Caveats: sensitivity to priors and to misspecification; calibration of $p(M \mid x)$.
+- [x] **T5.4.** Done on the toy instead (cloudy vs clear, D20); check with Max. Was: Example on the Vasist et al 2023 setup (clear vs. cloudy, or with or without a molecule). Not in the paper: a new experiment or an example from the literature. Decide with Max.
+
+### Conclusions
+
+- [x] **C1.** Revised (D21). Previously drafted: slide 33 "Take-home messages" (5 rows, icon + one sentence: separate model and inference; NPE; check always (network vs model); beware misspecification; compare models with IS), slide 34 "Getting started" (sbi, zuko, dingo, BayesFlow; lampe dropped, no longer maintained; Cranmer et al 2020, Vasist 2023, Gebhard 2025, Dax 2023), slide 35 closing equation $p(\theta|x) \propto p(\theta)\int p(x|z)p(z|\theta)dz$ over the title background. Rows 4–5 anticipate topics 4–5: revise once drafted. Was: One take-home per topic. Open challenges: validation, misspecification, resolution. Outlook in one sentence at most (diffusion priors for large problems, combining instruments, population priors).
+- [x] **C2.** Dropped: no thank-you slide, this is a tutorial, not a research talk (Gilles). Was: Thank-you slide: Vasist, Rozet, Absil, Mollière, Nasedkin, and Max's coauthors.
+
+### Figures
+
+- [ ] **F1.** Ongoing rule. Currently unused in `figures/`: `WISE1738.jpg`, `exoplanet-probe.jpg`, `toy-flow.png`, `toy-loss.png`, `toy-trainingset.png`, `videos/toy-flow.mp4`, `videos/toy-trainingset.mp4` (delete at the end, after asking). Copy only what is used, one copy per figure, no `~` backups. Avoid INFO8004 `figures/gifs` (455 MB) and `lec1x/`.
+- [x] **F2.** Used: `coverage-crisis.png`, `balancing.png`. Was: From INFO8004 `figures/sbi/`: conditioned-program, sbi, abc, inference-algorithms, frontiers-sbi*, npe-diagram, normalizing-flow, coverage, coverage-crisis, posterior-large-small, balancing, exoplanet-*, corner-exoplanet.
+- [x] **F3.** Done for what is used (`setup.svg`, `wise-spectra.png`, `wise-posterior.png`). Was: From gwfreeride: `setup.svg` (+ `.drawio`), `exoplanet-probe.jpg`, `WISE1738.jpg`, `fig1.png`, `wise-spectra.png`, `wise-posterior.png`, `figures/sbi/fig1.png`.
+- [ ] **F4.** From Dagstuhl: `georgebox.jpg`, `box-loop.png`, `prior-check.png`, `ppc.png`, `coverage-misspecification.png`, `cannon-conclusion.png`, `hybrid.gif`.
+- [x] **F7.** Not used: the opening uses illustrative media (D14), and the paper slides use the original figures (D17). Scripts kept. Was: Dark-mode paper figures for later topics: `tools/exo_figures.py` renders Vasist et al 2023 figures (spectrum + PPC, P–T profile, corner) with inverted lightness; `tools/gw_figures.py` plots GW150914 strain and posterior. Not used in the deck now; candidates for T3.2, T4.1, T4.4.
+- [x] **F5.** Done: toy walk-through, NPE pipeline, training, gallery, corner, calibration, PPC and IS animations (all generated by `tools/`). Decoupling diagram dropped (T1.3).
+- [x] **F6.** Opening panels: done (D14, O4). Was: black-hole $\theta$ panel, lensing panels, exoplanet $z$ panel. `setup.svg` already shows $\theta \to x \to y$ (physical model, observation model) but in the old notation: relabel to $\theta \to z \to x$ (`setup.drawio`).
+
+### Finish
+
+- [ ] **E1.** Speaker notes: simple sentences, clear story, no workshop-specific references.
+- [ ] **E2.** Screenshot pass with `.render/shot.py`; check timing (D2, D3). Also check each figure's on-screen font size (font rule above, `.render/measure.py`).
+- [ ] **E3.** PDF export.
+
+## Done
+
+- [x] 2026-11-07. Slide 30 animated (`tools/fm_anim.py`, `videos/fm-flow.mp4`, loops): Gaussian samples moved by the exact flow-matching vector field (straight paths) into a crescent + second mode, grey arrows show the field at each t, time bar; replaces the Gebhard et al vector-field strip.
+- [x] 2026-11-07. Take-homes rewritten in plain declarative sentences (louppe-prose); reading list split into Reviews / SBI for exoplanets (+ Vasist et al 2025); closing slide without the equation (background + "The end.").
+- [x] 2026-11-07. Take-home slide (36) rebuilt as a closing punch: four short lines ("If you can simulate it, you can infer it." / "Train once, then every spectrum in seconds." / "Check the network. Check the model." / "Better overdispersed than overconfident."), large light white type over the darkened HR 8799 time-lapse; the details moved to the notes.
+- [x] 2026-11-07. Model comparison reduced to 2 slides: slide 34 (question, posterior predictive + residuals: by eye both fit) and slide 35 (no heading: Bayes factor, the three estimators with their equations in a table, log B plot). Survey slide cut (Gilles); its references moved to slide 35's footnote. Deck: 38 slides.
+- [x] 2026-11-07. Slide 19 animated (`tools/npe_architecture_anim.py`, `videos/npe-pipeline.mp4`, 21 s, loops): training pass builds the pipeline and pushes samples θ → t1 → t2 → t3 → u; inference pass sends x_obs through the embedding, samples travel back u → θ, the corner fills in. Slide 24 calibration animation now loops.
+- [x] 2026-11-07. Overnight: model comparison (3 slides, D20) with all four nested-sampling runs and the clear-model NPE on alan; take-homes and reading list rewritten (D21); the 2·10^6-pair, 512-wide NPE (alan job 39198, valid −8.47) checked: posteriors only ~5% closer to MCMC than the current 5·10^5 model (T_int ±28.2 K vs ±29.8 K, MCMC ±26.0 K), so the figures were not regenerated (model in `.render/data/toy-2m/`, needs FLOW_HIDDEN=512,512). The local nested run had crashed on a dynesty API change (fixed: `res.samples_equal()`).
+- [x] 2026-11-06. Slide 25 "A trust crisis?": coverage crisis (Hermans et al) and balancing/BNPE (Delaunoy et al), faces of Delaunoy, Hermans, Rozet; message: better overdispersed than overconfident.
+- [x] 2026-11-06. Placeholder slides: "When the network is wrong" (slide 25, after calibration; T4.1) and "Model comparison" (slide 34, before the take-homes; topic 5). Deck: 37 slides.
+- [x] 2026-11-06. Conclusion slides drafted (C1).
+- [x] 2026-11-06. Review of the todo against the deck (33 slides): T2.5, T3.1–T3.3, T4.4, F3, F5, F7 ticked; D16–D19 recorded; state and budget updated.
+- [x] 2026-11-06. Paper slides restyled (D17) with headers and faces (Mollière, Nasedkin, Gebhard, Wildberger, Kofler added); importance-sampling explainer animation (slide 31) and corner (slide 32); calibration and PPC slides reordered and labelled network vs forward model (D19).
+- [x] 2026-11-06. Coverage animation, full-scale slides (Vasist 2023, WISE 1738), FMPE sequence (3 slides), importance sampling on the toy (ε = 0.57, log Z = −55.79); galaxy highlights NPE and FMPE.
+- [x] 2026-11-06. NPE sequence: architecture figure, training animation, results, PPC animation, amortization; normalizing-flow slide merged into architecture; galaxy finalized (names verified, Radev's methods, tilt, fonts).
+- [x] 2026-11-06. Galaxy slides (T2.1); "Simulate many" moved after them; walk-through fonts enlarged, arrow overlap fixed.
+- [x] 2026-11-06. Thank-you slide removed (C2); decoupling slide dropped as redundant (T1.3 covered by slides 11–12 and the forward walk).
+- [x] 2026-11-06. Toy simulator (D15) and slides 13–18: forward walk, simulate many, decoupling diagram.
+- [x] 2026-11-06. Slide 4: parameters shown as three simulations at three viscosities (Q9).
+- [x] 2026-11-06. Slide 10: HL Tau replaced by the Hubble hot-Jupiter lineup.
+- [x] 2026-11-06. Captions prefixed with Observations / Latent states / Parameters.
+- [x] 2026-11-06. Exoplanet caption boxes all bottom-left; VHS 1256 b planet moved up.
+- [x] 2026-11-06. Ocean $x$ is now real altimetry (PIA25773) instead of a block-averaged simulation.
+- [x] 2026-11-06. Turbulence toy replaced by ocean currents (Perpetual Ocean); flicker of the coarse view smoothed; footnotes on image slides get a dark text shadow.
+- [x] 2026-11-06. Strain time series overlaid on the GW spectrogram animation.
+- [x] 2026-11-06. Spectrum inset on the HR 8799 slide; the three GW caption boxes placed top-left.
+- [x] 2026-11-06. Opening finished: examples in Flatiron style with illustrative media (D14), O2–O4 done, setup diagram relabelled, three-stage generation table.
+- [x] 2026-11-06. Opening examples revised (D14): teaser restored with a $\theta$ slide, gravitational waves added (placeholder), black holes removed with `bh-x/y.png`, recipe table updated.
+- [x] 2026-11-06. Teaser dropped, then restored (D14).
+- [x] 2026-11-06. Background set to WASP-39 b (Q8).
+- [x] 2026-11-06. Max's email added; logo sizes rebalanced; four background options rendered (Q8).
+- [x] 2026-11-06. Title set to *Simulation-based inference for exoplanets* (D12), in `talk.md` and `index.html`.
+- [x] 2026-11-06. Title slide finished (K7): background, Max's photo and affiliation, ELLIS logo.
+- [x] 2026-11-06. Fork done: K1, K3, K4, K5 (9-slide skeleton, renders; staged, not committed).
+- [x] 2026-11-06. Surveyed sources: Flatiron, AI4Sci Mainz, gwfreeride, INFO8004, Dagstuhl 2022, PHYSTAT London 2024, SBI in HEP.
+- [x] 2026-11-06. Title chosen (D12, closes Q7).
+- [x] 2026-11-06. Notation chosen (D13, closes K6).
+- [x] 2026-11-06. Decisions D1–D11 recorded; guiding example checked on arXiv (the A&A page is not fetchable).

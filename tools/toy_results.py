@@ -1,0 +1,572 @@
+"""Figures for the NPE results on the toy simulator.
+
+    python tools/toy_results.py flow       # animation: base samples pushed through the flow layers -> videos/toy-flow.mp4
+    python tools/toy_results.py loss       # training curve -> figures/toy-loss.png
+    python tools/toy_results.py corner     # NPE vs MCMC on the benchmark -> figures/toy-corner.png
+    python tools/toy_results.py ppc        # posterior predictive check -> figures/toy-ppc.png
+    python tools/toy_results.py amortize   # animation: new spectra, instant posteriors -> videos/toy-amortize.mp4
+
+Model and samples are read from $TOY_OUT (default .render/data/toy/). Run with .render/venv (torch, zuko, corner).
+"""
+
+import os
+import subprocess
+import sys
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+
+sys.path.insert(0, os.path.dirname(__file__))
+import toy_exo as T
+import toy_npe as N
+
+OUT = N.OUT
+SIGMA = N.SIGMA
+NPE_COL, MCMC_COL, NS_COL, TRUE_COL = "#d1495b", "#555555", "#e08a1e", "#1f5fae"
+# Font sizes are set per figure so that, once scaled onto the slide, text appears at the same size as in the
+# simulator walk-through (20 pt in a 1600 px frame shown at 852 px: ~15 px labels, ~20 px titles).
+plt.rcParams.update({"font.size": 18, "axes.spines.top": False, "axes.spines.right": False,
+                     "font.family": "Roboto"})
+
+
+def load_model():
+    m = N.build()
+    m.load_state_dict(torch.load(OUT + "npe.pt", weights_only=False)["state"])
+    m.eval()
+    return m
+
+
+def encode(writer_cmd_out, W, H, FPS):
+    return subprocess.Popen(["ffmpeg", "-v", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgba", "-s", f"{W}x{H}",
+                             "-r", str(FPS), "-i", "-", "-c:v", "libx264", "-crf", "22", "-preset", "slow",
+                             "-pix_fmt", "yuv420p", "-movflags", "+faststart", writer_cmd_out], stdin=subprocess.PIPE)
+
+
+# ------------------------------------------------------------------ flow
+
+def flow(i=0, j=3, n=3000, FPS=24):
+    """Push base samples through the three transforms, in the (θ_i, θ_j) plane (unit coordinates)."""
+    model = load_model()
+    x_obs = torch.tensor(np.load(OUT + "posterior.npz")["x_obs"], dtype=torch.float32)
+    with torch.no_grad():
+        d = model.flow(model.embed(N.preprocess(x_obs)))
+        z = d.base.sample((n,))
+        stages = [z]
+        for t in reversed(d.transform.transforms):  # sampling applies the inverse, last transform first
+            z = t.inv(z)
+            stages.append(z)
+    stages = [s.numpy() for s in stages]
+    titles = ["Noise $u$", "after layer 1", "after layer 2", r"Samples of $\theta$ given $x$"]
+    W, H, DPI = 1200, 900, 100
+    plt.rcParams["font.size"] = 23
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    ax = fig.add_axes([0.16, 0.15, 0.80, 0.74])
+    p = encode("figures/videos/toy-flow.mp4", W, H, FPS)
+    hold, move = int(0.9 * FPS), int(1.2 * FPS)
+    seq = []
+    for s in range(len(stages)):
+        seq += [(s, s, 0.0)] * hold
+        if s < len(stages) - 1:
+            seq += [(s, s + 1, (k + 1) / move) for k in range(move)]
+    seq += [(len(stages) - 1, len(stages) - 1, 0.0)] * hold
+    lab = [T.LABELS[i], T.LABELS[j]]
+
+    def box(z):  # square view around the samples of a stage
+        c = np.median(z[:, [i, j]], 0)
+        h = 1.25 * np.max(np.percentile(np.abs(z[:, [i, j]] - c), 99, 0))
+        return c, h
+    boxes = [box(z) for z in stages]
+    for a, b, u in seq:
+        u = u * u * (3 - 2 * u)
+        pts = (1 - u) * stages[a] + u * stages[b]
+        ax.cla()
+        col = NPE_COL if (b == len(stages) - 1 and u > 0.5) or a == len(stages) - 1 else "#7a8ca8"
+        ax.scatter(pts[:, i], pts[:, j], s=6, c=col, alpha=0.45, lw=0)
+        c = (1 - u) * boxes[a][0] + u * boxes[b][0]
+        h = np.exp((1 - u) * np.log(boxes[a][1]) + u * np.log(boxes[b][1]))  # zoom smoothly, in log scale
+        ax.set_xlim(c[0] - h, c[0] + h)
+        ax.set_ylim(c[1] - h, c[1] + h)
+        ax.set_aspect("equal")
+        ax.set_title(titles[b if u > 0.5 else a], fontsize=31, loc="left")
+        ax.locator_params(nbins=4)
+        ax.set_xlabel(f"{lab[0]} (rescaled)")
+        ax.set_ylabel(f"{lab[1]} (rescaled)")
+        fig.canvas.draw()
+        p.stdin.write(np.asarray(fig.canvas.buffer_rgba()).tobytes())
+    fig.savefig("figures/toy-flow.png", dpi=DPI)
+    p.stdin.close()
+    p.wait()
+
+
+# ------------------------------------------------------------------ loss
+
+def loss():
+    log = np.array(torch.load(OUT + "npe.pt", weights_only=False)["log"])
+    plt.rcParams["font.size"] = 17
+    fig, ax = plt.subplots(figsize=(10, 5.5), dpi=100)
+    ax.plot(np.arange(1, len(log) + 1), log[:, 0], color="#888", lw=2.5, label="training")
+    ax.plot(np.arange(1, len(log) + 1), log[:, 1], color=NPE_COL, lw=2.5, label="validation")
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel(r"$-\log q_\phi(\theta | x)$")
+    ax.legend(frameon=False)
+    fig.tight_layout()
+    fig.savefig("figures/toy-loss.png")
+
+
+# ------------------------------------------------------------------ corner
+
+def corner_plot():
+    import corner
+    p = np.load(OUT + "posterior.npz")
+    m = np.load(OUT + "mcmc.npz")
+    rng = np.random.default_rng(0)
+    b = m["samples"][rng.choice(len(m["samples"]), 20000, replace=False)]
+    a = p["samples"]
+    lo = np.minimum(np.percentile(a, 0.5, 0), np.percentile(b, 0.5, 0))
+    hi = np.maximum(np.percentile(a, 99.5, 0), np.percentile(b, 99.5, 0))
+    rng_ = [(l - 0.1 * (h - l), h + 0.1 * (h - l)) for l, h in zip(lo, hi)]
+    plt.rcParams["font.size"] = 21
+    kw = dict(bins=35, smooth=1.0, plot_datapoints=False, plot_density=False, levels=(0.68, 0.95),
+              range=rng_, labels=T.LABELS, label_kwargs={"fontsize": 21},
+              max_n_ticks=2, labelpad=0.12)
+    # Separate hist_kwargs per call: corner writes the colour into the dict it is given.
+    fig = corner.corner(b, color=MCMC_COL, fill_contours=False, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    ns_path = OUT + "nested.npz" if os.path.exists(OUT + "nested.npz") else ".render/data/toy/nested.npz"
+    ns = np.load(ns_path) if os.path.exists(ns_path) else None
+    if ns is not None:
+        corner.corner(ns["samples"], color=NS_COL, fig=fig, fill_contours=False,
+                      hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    corner.corner(a, color=NPE_COL, fig=fig, fill_contours=False, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    n = len(T.NAMES)
+    for k in range(n):  # rescale diagonal panels to fit both normalized histograms
+        ax = fig.axes[k * n + k]
+        ax.relim()
+        ax.autoscale(axis="y")
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.05)
+    corner.overplot_lines(fig, p["theta_star"], color=TRUE_COL, lw=1.5)
+    fig.set_size_inches(12, 12)
+    for ax in fig.axes:
+        ax.tick_params(labelsize=21)
+    handles = [plt.Line2D([], [], color=NPE_COL, lw=3, label=f"NPE ({float(p['seconds']):.1f} s)"),
+               plt.Line2D([], [], color=MCMC_COL, lw=3, label="MCMC (~9 min)")]
+    if ns is not None:
+        handles.append(plt.Line2D([], [], color=NS_COL, lw=3, label=f"nested sampling ({float(ns['seconds']) / 60:.0f} min)"))
+    handles.append(plt.Line2D([], [], color=TRUE_COL, lw=2, label=r"true $\theta$"))
+    fig.legend(handles=handles,
+               loc="upper right", bbox_to_anchor=(0.97, 0.97), frameon=False, fontsize=21)
+    fig.savefig("figures/toy-corner.png", dpi=100, bbox_inches="tight")
+
+
+# ------------------------------------------------------------------ ppc
+
+def ppc(n=200):
+    p = np.load(OUT + "posterior.npz")
+    sim = T.Simulator(noisy=False)
+    th = p["samples"][:n]
+    f = np.array([sim.clean(t) for t in th])
+    plt.rcParams["font.size"] = 17
+    fig, ax = plt.subplots(figsize=(14, 6), dpi=100)
+    lo, hi = np.percentile(f, [2.5, 97.5], axis=0)
+    ax.fill_between(T.WL_OUT, lo, hi, color=NPE_COL, alpha=0.25, lw=0, label=r"$f(\theta)$, $\theta \sim q_\phi(\theta|x)$ (95%)")
+    ax.plot(T.WL_OUT, np.median(f, 0), color=NPE_COL, lw=2)
+    ax.errorbar(T.WL_OUT, p["x_obs"], yerr=SIGMA, fmt="o", ms=5, color="#222", elinewidth=1, label=r"observed $x$")
+    ax.set_xlabel("Wavelength [μm]")
+    ax.set_ylabel(r"Flux [$10^{-16}$ W m$^{-2}$ μm$^{-1}$]")
+    ax.set_xlim(0.95, 2.45)
+    ax.legend(frameon=False, loc="upper right")
+    fig.tight_layout()
+    fig.savefig("figures/toy-ppc.png")
+
+
+# ------------------------------------------------------------------ observed spectrum
+
+def xobs():
+    p = np.load(OUT + "posterior.npz")
+    plt.rcParams["font.size"] = 17
+    fig, ax = plt.subplots(figsize=(14, 6), dpi=100)
+    ax.errorbar(T.WL_OUT, p["x_obs"], yerr=SIGMA, fmt="o", ms=5, color="#222", elinewidth=1)
+    ax.set_xlabel("Wavelength [μm]")
+    ax.set_ylabel(r"Flux [$10^{-16}$ W m$^{-2}$ μm$^{-1}$]")
+    ax.set_xlim(0.95, 2.45)
+    fig.tight_layout()
+    fig.savefig("figures/toy-xobs.png")
+
+
+# ------------------------------------------------------------------ amortize
+
+def amortize(n_obs=8, i=0, j=3, FPS=24, seed=11):
+    model = load_model()
+    sim = T.Simulator(noisy=True, seed=seed)
+    rng = np.random.default_rng(seed)
+    thetas = []
+    while len(thetas) < n_obs:
+        t = sim.sample_prior(1)[0]
+        if 0.3 < sim.clean(t).mean() < 8:
+            thetas.append(t)
+    W, H, DPI = 1600, 700, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    axs = fig.add_axes([0.08, 0.16, 0.50, 0.72])
+    axp = fig.add_axes([0.68, 0.16, 0.29, 0.72])
+    p = encode("figures/videos/toy-amortize.mp4", W, H, FPS)
+    for k, t in enumerate(thetas):
+        x = sim(t)
+        with torch.no_grad():
+            s = N.from_unit(model.sample(torch.tensor(x, dtype=torch.float32), 4000).numpy())
+        for fr in range(int(1.6 * FPS)):
+            u = min(1.0, fr / (0.5 * FPS))
+            axs.cla()
+            axp.cla()
+            axs.errorbar(T.WL_OUT, x, yerr=SIGMA, fmt="o", ms=4, color="#222", elinewidth=1)
+            axs.set_xlim(0.95, 2.45)
+            axs.set_xlabel("Wavelength [μm]")
+            axs.set_ylabel("Flux")
+            axs.set_title(f"New observation $x$ #{k + 1}", loc="left", fontsize=27)
+            m = int(u * len(s))
+            axp.scatter(s[:m, i], s[:m, j], s=5, c=NPE_COL, alpha=0.35, lw=0)
+            axp.plot([t[i]], [t[j]], "*", ms=22, color=TRUE_COL, mec="white")
+            axp.set_xlim(T.LOWER[i], T.UPPER[i])
+            axp.set_ylim(T.LOWER[j], T.UPPER[j])
+            axp.set_xlabel(T.LABELS[i] + " [K]")
+            axp.set_ylabel(T.LABELS[j])
+            axp.set_title(r"$q_\phi(\theta | x)$", loc="left", fontsize=27)
+            fig.canvas.draw()
+            p.stdin.write(np.asarray(fig.canvas.buffer_rgba()).tobytes())
+        if k == 0:
+            fig.savefig("figures/toy-amortize.png", dpi=DPI)
+    p.stdin.close()
+    p.wait()
+
+
+# ------------------------------------------------------------------ gallery
+
+def gallery(n_rows=2, n_cols=5, i=0, j=3, FPS=24, seed=21, mcmc_minutes=9.0):
+    """Amortization: new observations, each as a short spectrum with its 2D posterior below, filled one by one."""
+    import time as _time
+    model = load_model()
+    sim = T.Simulator(noisy=True, seed=seed)
+    n = n_rows * n_cols
+    thetas = []
+    while len(thetas) < n:
+        t = sim.sample_prior(1)[0]
+        if 0.3 < sim.clean(t).mean() < 8:
+            thetas.append(t)
+    xs = [sim(t) for t in thetas]
+    posts, secs = [], []
+    for x in xs:
+        t0 = _time.time()
+        with torch.no_grad():
+            u = model.sample(torch.tensor(x, dtype=torch.float32), 3000).numpy()
+        secs.append(_time.time() - t0)
+        posts.append(N.from_unit(u))
+    W, H, DPI = 1600, 1000, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    L, R, B, Tp = 0.085, 0.965, 0.13, 0.985  # left margin for the C/O labels, mirrored on the right
+    cw = (R - L) / n_cols
+    rh = (Tp - B) / n_rows
+    spec_h, post_h, gap = 0.22 * rh, 0.60 * rh, 0.03 * rh
+    pairs = []
+    for k in range(n):
+        r, c = divmod(k, n_cols)
+        x0 = L + c * cw + 0.012
+        w = cw - 0.03
+        top = Tp - r * rh
+        axs = fig.add_axes([x0, top - spec_h, w, spec_h])
+        axp = fig.add_axes([x0, top - spec_h - gap - post_h, w, post_h])
+        for ax in (axs, axp):
+            for sp in ("top", "right"):
+                ax.spines[sp].set_visible(False)
+        axs.set_xlim(0.95, 2.45)
+        axs.set_xticks([])
+        axs.set_yticks([])
+        axp.set_xlim(T.LOWER[i], T.UPPER[i])
+        axp.set_ylim(T.LOWER[j], T.UPPER[j])
+        axp.set_xticks([800, 1600])
+        axp.set_yticks([0.4, 1.0])
+        if c > 0:
+            axp.set_yticklabels([])
+        else:
+            axp.set_ylabel("C/O")
+        if r < n_rows - 1:
+            axp.set_xticklabels([])
+        else:
+            axp.set_xlabel(r"$T_{\rm int}$ [K]")
+        pairs.append((axs, axp))
+    clock = fig.text(L + 0.012, 0.035, "", fontsize=24, va="center", ha="left")
+    other = fig.text(R - 0.018, 0.035, "", fontsize=24, va="center", ha="right", color="#555")
+    p = encode("figures/videos/toy-gallery.mp4", W, H, FPS)
+    per = int(0.5 * FPS)
+    for k in range(n):
+        axs, axp = pairs[k]
+        axs.plot(T.WL_OUT, xs[k], color="#222", lw=1.5)
+        s_ = posts[k]
+        axp.scatter(s_[:, i], s_[:, j], s=4, c=NPE_COL, alpha=0.3, lw=0)
+        axp.plot([thetas[k][i]], [thetas[k][j]], "*", ms=18, color=TRUE_COL, mec="white", mew=1)
+        clock.set_text(f"NPE: {sum(secs[:k + 1]):.1f} s for {k + 1} spectra")
+        other.set_text(f"MCMC or nested sampling: ~{(k + 1) * mcmc_minutes:.0f} min")
+        fig.canvas.draw()
+        frame = np.asarray(fig.canvas.buffer_rgba()).tobytes()
+        for _ in range(per):
+            p.stdin.write(frame)
+    for _ in range(int(3 * FPS)):
+        p.stdin.write(frame)
+    fig.savefig("figures/toy-gallery.png", dpi=DPI)
+    p.stdin.close()
+    p.wait()
+
+
+# ------------------------------------------------------------------ coverage
+
+def coverage(n_test=1000, n_samples=1000, seed=5):
+    """Expected coverage of the highest-density credible regions of q_φ, on test pairs from the simulator."""
+    import time as _time
+    model = load_model()
+    sim = T.Simulator(noisy=True, seed=seed)
+    th = sim.sample_prior(n_test)
+    xs = np.array([sim(t) for t in th])
+    t0 = _time.time()
+    ranks = []
+    with torch.no_grad():
+        for t, x in zip(th, xs):
+            c = model.embed(N.preprocess(torch.tensor(x, dtype=torch.float32)))
+            d = model.flow(c)
+            s_ = d.sample((n_samples,))
+            lp_s = d.log_prob(s_)
+            lp_t = d.log_prob(torch.tensor(N.to_unit(t), dtype=torch.float32))
+            ranks.append((lp_s > lp_t).float().mean().item())  # level of the smallest HPD region containing θ*
+    dt = _time.time() - t0
+    ranks = np.sort(np.array(ranks))
+    levels = np.linspace(0, 1, 101)
+    empirical = np.array([(ranks <= a).mean() for a in levels])
+    np.savez(OUT + "coverage.npz", levels=levels, empirical=empirical, seconds=dt)
+    plt.rcParams["font.size"] = 17
+    fig, ax = plt.subplots(figsize=(7.5, 7), dpi=100)
+    ax.plot([0, 1], [0, 1], "--", color="#888", lw=2)
+    ax.fill_between([0, 1], [0, 1], [1, 1], color="#2a9d8f", alpha=0.07, lw=0)
+    ax.fill_between([0, 1], [0, 0], [0, 1], color=NPE_COL, alpha=0.07, lw=0)
+    ax.text(0.05, 0.92, "conservative", color="#2a9d8f", fontsize=17)
+    ax.text(0.62, 0.06, "overconfident", color=NPE_COL, fontsize=17)
+    ax.plot(levels, empirical, color=NPE_COL, lw=3)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_aspect("equal")
+    ax.set_xlabel("Credibility level")
+    ax.set_ylabel("Expected coverage")
+    fig.tight_layout()
+    fig.savefig("figures/toy-coverage.png")
+    print(f"{n_test} posteriors in {dt:.1f} s")
+
+
+# ------------------------------------------------------------------ coverage animation
+
+def coverage_anim(n_test=1000, n_samples=1000, n_rows=30, j=3, seed=5, FPS=24):
+    """Left: 90% credible intervals of C/O for test cases, true value in or out. Right: expected coverage
+    computed from the cases seen so far, converging to the diagonal."""
+    model = load_model()
+    sim = T.Simulator(noisy=True, seed=seed)
+    th = sim.sample_prior(n_test)
+    ranks, lo, hi = [], [], []
+    with torch.no_grad():
+        for t in th:
+            d = model.flow(model.embed(N.preprocess(torch.tensor(sim(t), dtype=torch.float32))))
+            s_ = d.sample((n_samples,))
+            ranks.append((d.log_prob(s_) > d.log_prob(torch.tensor(N.to_unit(t), dtype=torch.float32))).float().mean().item())
+            cj = N.from_unit(s_.numpy())[:, j]
+            lo.append(np.percentile(cj, 5))
+            hi.append(np.percentile(cj, 95))
+    ranks, lo, hi = np.array(ranks), np.array(lo), np.array(hi)
+    inside = (th[:, j] >= lo) & (th[:, j] <= hi)
+    levels = np.linspace(0, 1, 101)
+
+    W, H, DPI = 1600, 800, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    axi = fig.add_axes([0.06, 0.14, 0.42, 0.74])
+    axc = fig.add_axes([0.6, 0.14, 0.33, 0.74 * 1.0])
+    GREEN = "#2a9d8f"
+    # Timeline: rows appear one by one, then the count accelerates to n_test
+    steps = list(range(1, n_rows + 1)) + list(np.unique(np.geomspace(n_rows, n_test, 70).astype(int)))
+    p = encode("figures/videos/toy-coverage.mp4", W, H, FPS)
+    for k, n in enumerate(steps):
+        axi.cla()
+        axc.cla()
+        m = min(n, n_rows)
+        for r in range(m):
+            col = GREEN if inside[r] else NPE_COL
+            axi.plot([lo[r], hi[r]], [r, r], color=col, lw=4, solid_capstyle="round", alpha=0.85)
+            axi.plot([th[r, j]], [r], "o", color="#222", ms=7, zorder=3)
+        axi.set_xlim(T.LOWER[j], T.UPPER[j])
+        axi.set_ylim(n_rows - 0.5, -0.8)
+        axi.set_yticks([])
+        axi.spines["left"].set_visible(False)
+        axi.set_xlabel("C/O")
+        frac = inside[:n].mean()
+        axi.set_title(f"90% credible intervals: true value inside in {inside[:n].sum()} of {n} ({100 * frac:.0f}%)",
+                      loc="left", fontsize=20)
+        emp = np.array([(ranks[:n] <= a).mean() for a in levels])
+        axc.fill_between([0, 1], [0, 1], [1, 1], color=GREEN, alpha=0.08, lw=0)
+        axc.fill_between([0, 1], [0, 0], [0, 1], color=NPE_COL, alpha=0.08, lw=0)
+        axc.plot([0, 1], [0, 1], "--", color="#888", lw=2)
+        axc.text(0.04, 0.9, "conservative", color=GREEN)
+        axc.text(0.5, 0.06, "overconfident", color=NPE_COL)
+        axc.plot(levels, emp, color="#222", lw=3)
+        axc.plot([0.9], [inside[:n].mean() if False else emp[90]], "o", color="#222", ms=8)
+        axc.set_xlim(0, 1)
+        axc.set_ylim(0, 1)
+        axc.set_xticks([0, 0.5, 1])
+        axc.set_yticks([0, 0.5, 1])
+        axc.set_xlabel("Credibility level")
+        axc.set_ylabel("Expected coverage")
+        axc.set_title(f"Expected coverage, {n} cases", loc="left", fontsize=20)
+        fig.canvas.draw()
+        frame = np.asarray(fig.canvas.buffer_rgba()).tobytes()
+        for _ in range(int(0.35 * FPS) if k < n_rows else 2):
+            p.stdin.write(frame)
+    for _ in range(int(3 * FPS)):
+        p.stdin.write(frame)
+    fig.savefig("figures/toy-coverage.png", dpi=DPI)
+    p.stdin.close()
+    p.wait()
+
+
+# ------------------------------------------------------------------ importance sampling
+
+def is_corner():
+    """NPE, NPE + importance sampling, and MCMC on the benchmark; efficiency and evidence in the legend."""
+    import corner
+    p = np.load(OUT + "posterior.npz")
+    q = np.load(OUT + "is.npz")
+    m = np.load(OUT + "mcmc.npz")
+    rng = np.random.default_rng(0)
+    b = m["samples"][rng.choice(len(m["samples"]), 20000, replace=False)]
+    a, c = p["samples"], q["samples"]
+    lo = np.minimum(np.percentile(a, 0.5, 0), np.percentile(b, 0.5, 0))
+    hi = np.maximum(np.percentile(a, 99.5, 0), np.percentile(b, 99.5, 0))
+    rng_ = [(l - 0.1 * (h - l), h + 0.1 * (h - l)) for l, h in zip(lo, hi)]
+    plt.rcParams["font.size"] = 21
+    kw = dict(bins=35, smooth=1.0, plot_datapoints=False, plot_density=False, levels=(0.68, 0.95),
+              range=rng_, labels=T.LABELS, label_kwargs={"fontsize": 21}, max_n_ticks=2, labelpad=0.12,
+              fill_contours=False)
+    IS_COL = "#1f5fae"
+    fig = corner.corner(b, color=MCMC_COL, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    corner.corner(a, color=NPE_COL, fig=fig, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    corner.corner(c, color=IS_COL, fig=fig, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    n = len(T.NAMES)
+    for k in range(n):
+        ax = fig.axes[k * n + k]
+        ax.relim()
+        ax.autoscale(axis="y")
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.05)
+    fig.set_size_inches(12, 12)
+    for ax in fig.axes:
+        ax.tick_params(labelsize=21)
+    ns = OUT + "nested.npz" if os.path.exists(OUT + "nested.npz") else ".render/data/toy/nested.npz"
+    z = f"$\\log \\hat{{Z}} = {float(q['logz']):.2f}$"
+    if os.path.exists(ns):
+        z += f" (nested: {float(np.load(ns)['logz']):.2f})"
+    fig.legend(handles=[plt.Line2D([], [], color=NPE_COL, lw=3, label="NPE"),
+                        plt.Line2D([], [], color=IS_COL, lw=3, label=f"NPE + importance sampling"),
+                        plt.Line2D([], [], color=MCMC_COL, lw=3, label="MCMC"),
+                        plt.Line2D([], [], color="none", label=f"efficiency $\\varepsilon = {float(q['efficiency']):.2f}$"),
+                        plt.Line2D([], [], color="none", label=z)],
+               loc="upper right", bbox_to_anchor=(0.97, 0.97), frameon=False, fontsize=21, handlelength=1.5)
+    fig.savefig("figures/toy-is-corner.png", dpi=100, bbox_inches="tight")
+
+
+# ------------------------------------------------------------------ importance sampling, explained
+
+def is_anim(n=3000, i=0, j=3, FPS=24, seed=4):
+    """Three panels: proposal samples from q_phi; the same, sized by importance weight; resampled by weight,
+    on top of the MCMC contours. Exact likelihood of the toy."""
+    from multiprocessing import Pool
+    from scipy.ndimage import gaussian_filter
+    torch.manual_seed(seed)
+    post = np.load(OUT + "posterior.npz")
+    x_obs = post["x_obs"]
+    model = load_model()
+    with torch.no_grad():
+        d = model.flow(model.embed(N.preprocess(torch.tensor(x_obs, dtype=torch.float32))))
+        u = d.sample((n,))
+        log_q = d.log_prob(u).double().numpy() + np.sum(np.log(2 / (T.UPPER - T.LOWER)))
+    th = N.from_unit(u.numpy().astype(np.float64))
+    ok = np.all((th >= T.LOWER) & (th <= T.UPPER), axis=1)
+    th, log_q = th[ok], log_q[ok]
+    with Pool(8, initializer=N._ns_init, initargs=(x_obs,)) as pool:
+        ll = np.array(pool.map(N._ns_loglike, list(th), chunksize=100))
+    log_w = ll - np.sum(np.log(T.UPPER - T.LOWER)) - log_q
+    w = np.exp(log_w - log_w.max())
+    eff = w.sum() ** 2 / (len(w) * (w * w).sum())
+    rng = np.random.default_rng(seed)
+    res = th[rng.choice(len(th), size=len(th), p=w / w.sum())] + rng.normal(0, 1e-3, (len(th), 6)) * (T.UPPER - T.LOWER)
+    m = np.load(OUT + "mcmc.npz")["samples"]
+    lo = np.percentile(th[:, [i, j]], 0.5, 0)
+    hi = np.percentile(th[:, [i, j]], 99.5, 0)
+    pad = 0.12 * (hi - lo)
+    lo, hi = lo - pad, hi + pad
+    H, xe, ye = np.histogram2d(m[:, i], m[:, j], bins=50, range=[[lo[0], hi[0]], [lo[1], hi[1]]])
+    H = gaussian_filter(H, 1.3).T
+    flat = np.sort(H.ravel())[::-1]
+    cum = np.cumsum(flat) / flat.sum()
+    lev = sorted(flat[np.searchsorted(cum, q)] for q in (0.95, 0.68))
+    X = (xe[:-1] + xe[1:]) / 2
+    Y = (ye[:-1] + ye[1:]) / 2
+
+    W, H_, DPI = 1600, 620, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H_ / DPI), dpi=DPI, facecolor="white")
+    axes = [fig.add_axes([0.06 + k * 0.32, 0.17, 0.26, 0.67]) for k in range(3)]
+    titles = [r"1. Sample $\theta_i \sim q_\phi(\theta|x)$", r"2. Weight $w_i$", "3. Resample by weight"]
+    IS_COL = "#1f5fae"
+    wn = w / w.max()
+    p = encode("figures/videos/toy-is.mp4", W, H_, FPS)
+    n_in = int(1.2 * FPS)
+    stages = [(0, n_in), (1, n_in), (2, n_in)]
+    shown = 0
+    for stage, nf in stages:
+        for f in range(nf):
+            uu = (f + 1) / nf
+            uu = uu * uu * (3 - 2 * uu)
+            for k, ax in enumerate(axes):
+                ax.cla()
+                ax.set_xlim(lo[0], hi[0])
+                ax.set_ylim(lo[1], hi[1])
+                ax.set_xlabel(T.LABELS[i] + " [K]")
+                if k == 0:
+                    ax.set_ylabel("C/O")
+                else:
+                    ax.set_yticklabels([])
+                ax.locator_params(nbins=3)
+                ax.set_title(titles[k], loc="left", fontsize=21, color="#222" if k <= stage else "#ccc")
+                if k > stage or (k == stage and False):
+                    continue
+                a = uu if k == stage else 1.0
+                if k == 0:
+                    ax.scatter(th[:, i], th[:, j], s=4, c=NPE_COL, alpha=0.35 * a, lw=0)
+                elif k == 1:
+                    ax.scatter(th[:, i], th[:, j], s=2 + 60 * wn ** 1.0, c=NPE_COL, alpha=0.35 * a, lw=0)
+                else:
+                    ax.contour(X, Y, H, levels=lev, colors=[MCMC_COL], linewidths=2, alpha=a)
+                    ax.scatter(res[:, i], res[:, j], s=4, c=IS_COL, alpha=0.35 * a, lw=0)
+            fig.canvas.draw()
+            p.stdin.write(np.asarray(fig.canvas.buffer_rgba()).tobytes())
+    axes[2].text(0.97, 0.05, f"efficiency $\\varepsilon = {eff:.2f}$", transform=axes[2].transAxes, ha="right",
+                 fontsize=19, color="#222")
+    axes[2].plot([], [], color=MCMC_COL, lw=2, label="MCMC")
+    axes[2].legend(frameon=False, fontsize=18, loc="upper left")
+    fig.canvas.draw()
+    frame = np.asarray(fig.canvas.buffer_rgba()).tobytes()
+    for _ in range(int(3 * FPS)):
+        p.stdin.write(frame)
+    fig.savefig("figures/toy-is.png", dpi=DPI)
+    p.stdin.close()
+    p.wait()
+    print(f"efficiency {eff:.3f}")
+
+
+if __name__ == "__main__":
+    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
