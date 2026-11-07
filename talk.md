@@ -341,7 +341,7 @@ class: middle
 Does the .bold[forward model] agree with what we know? Draw $\theta \sim p(\theta)$, simulate, and compare summary statistics with domain knowledge, before seeing any data.
 
 .center[
-<video poster="figures/toy-prior-pc.png?v=3" muted autoplay playsinline class="anim">
+<video poster="figures/toy-prior-pc.png?v=3" muted loop autoplay playsinline class="anim">
 <source src="figures/videos/toy-prior-pc.mp4?v=3" type="video/mp4">
 </video>
 ]
@@ -444,7 +444,7 @@ class: middle
 Simulate pairs $(\theta\_i, x\_i)$ from the prior and the simulator, then minimize the loss over them. Noise is added on the fly.
 
 .center[
-<video poster="figures/toy-training.png" muted autoplay playsinline class="anim">
+<video poster="figures/toy-training.png" muted loop autoplay playsinline class="anim">
 <source src="figures/videos/toy-training.mp4" type="video/mp4">
 </video>
 ]
@@ -573,7 +573,7 @@ class: middle
 Does the .bold[forward model] explain the observation? Draw $\theta \sim q\_\phi(\theta | x\_{\rm obs})$, simulate, compare.
 
 .center[
-<video poster="figures/toy-ppc.png" muted autoplay playsinline class="anim">
+<video poster="figures/toy-ppc.png" muted loop autoplay playsinline class="anim">
 <source src="figures/videos/toy-ppc.mp4" type="video/mp4">
 </video>
 ]
@@ -581,6 +581,30 @@ Does the .bold[forward model] explain the observation? Draw $\theta \sim q\_\phi
 ???
 
 The second check tests something else: the forward model. Calibration only uses simulations, so it cannot tell us whether the simulator describes the real planet. The posterior predictive can, and you already know it from retrievals. We draw parameters from the posterior, run them through the simulator, the same one as before, and compare the spectra with the observation. Each draw leaves a trace. Together, they cover the data, within the noise.
+
+---
+
+class: middle
+
+## When the model is wrong
+
+The observation has an absorption band at 1.52 μm that the simulator does not have. Both posteriors are .bold[confident and wrong].
+
+.center.width-100[![](figures/toy-misspec.png)]
+
+Calibration is computed on simulations, and stays fine. Only checks against the data, here the residuals, see the problem.
+
+.footnote[Detecting and handling misspecification: [Schmitt et al](https://arxiv.org/abs/2112.08866), 2023; [Ward et al](https://arxiv.org/abs/2210.06564), NeurIPS 2022.]
+
+???
+
+Every result so far assumed that the simulator is right. Here it is not. I took the same observation, and added an absorption band at 1.52 microns, where ammonia absorbs in cool atmospheres. Our simulator has no ammonia.
+
+On the left, the posteriors for the gravity and the radius. NPE in red, MCMC in grey. They agree with each other, they are tight, and they both miss the truth, the star. The gravity is even pushed against the edge of the prior, a hint that something is off. MCMC is no safer: it is exact, but for the wrong model. And NPE is now fed a spectrum unlike its training data, so in general it extrapolates without warning. Here it happens to stay close to MCMC.
+
+None of the diagnostics on simulations catch it. Coverage was computed on simulated pairs: the network is still calibrated, for spectra that the simulator can produce. What catches it is the posterior predictive check, on the right. By eye, the fit looks fine. The residuals do not: two points at five to six sigma, right at the missing band.
+
+The fix is in the model: add the physics, or inflate the noise model to absorb what is missing. There is also work on detecting misspecification with the network itself, and on making NPE robust to it.
 
 ---
 
@@ -720,7 +744,7 @@ When the likelihood can be evaluated, the network becomes a .bold[proposal]. Dra
 $$w\_i = \frac{p(x | \theta\_i) \, p(\theta\_i)}{q\_\phi(\theta\_i | x)}.$$
 
 .center[
-<video poster="figures/toy-is.png" muted autoplay playsinline class="anim">
+<video poster="figures/toy-is.png" muted loop autoplay playsinline class="anim">
 <source src="figures/videos/toy-is.mp4" type="video/mp4">
 </video>
 ]

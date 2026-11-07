@@ -5,6 +5,7 @@
     python tools/toy_results.py corner     # NPE vs MCMC on the benchmark -> figures/toy-corner.png
     python tools/toy_results.py ppc        # posterior predictive check -> figures/toy-ppc.png
     python tools/toy_results.py prior_pc   # animation: prior predictive check -> videos/toy-prior-pc.mp4
+    python tools/toy_results.py misspec    # misspecified observation: posteriors + PPC -> figures/toy-misspec.png
     python tools/toy_results.py amortize   # animation: new spectra, instant posteriors -> videos/toy-amortize.mp4
 
 Model and samples are read from $TOY_OUT (default .render/data/toy/). Run with .render/venv (torch, zuko, corner).
@@ -253,6 +254,71 @@ def prior_pc(n=120, n_all=3000, FPS=24, seed=3):
     fig.savefig("figures/toy-prior-pc.png", dpi=DPI)
     out.stdin.close()
     out.wait()
+
+
+# ------------------------------------------------------------------ misspecification
+
+def misspec(i=1, j=5, n_ppc=200, d=".render/data/toy-misspec/"):
+    """Observation with an absorption band the simulator lacks (1.52 μm, ammonia in cool atmospheres).
+    Left: NPE and MCMC posteriors, both confident, both away from θ*. Right: posterior predictive check, whose
+    residuals point at the missing band. Run toy_npe.py observe and mcmc with TOY_OUT=d, X_OBS=d/xobs.npz first."""
+    from scipy.ndimage import gaussian_filter
+    obs = np.load(d + "xobs.npz")
+    a = np.load(d + "posterior.npz")["samples"]
+    m = np.load(d + "mcmc.npz")["samples"]
+    x = obs["x_obs"]
+    sim = T.Simulator(noisy=False)
+    f = np.array([sim.clean(t) for t in a[:n_ppc]])
+    med = np.median(f, 0)
+    lo95, hi95 = np.percentile(f, [2.5, 97.5], axis=0)
+    W, H, DPI = 1600, 720, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    ap = fig.add_axes([0.07, 0.14, 0.27, 0.74])
+    asp = fig.add_axes([0.46, 0.44, 0.52, 0.44])
+    ar = fig.add_axes([0.46, 0.14, 0.52, 0.22], sharex=asp)
+
+    # posterior: contours (68, 95%) of NPE and MCMC, and the truth
+    pts = np.vstack([a[:, [i, j]], m[:, [i, j]], T.THETA_STAR[[i, j]][None]])
+    lo, hi = pts.min(0), pts.max(0)
+    pad = 0.12 * (hi - lo)
+    lo, hi = lo - pad, hi + pad
+    for smp, col, lab in [(m, MCMC_COL, "MCMC"), (a, NPE_COL, "NPE")]:
+        Hh, xe, ye = np.histogram2d(smp[:, i], smp[:, j], bins=60, range=[[lo[0], hi[0]], [lo[1], hi[1]]])
+        Hh = gaussian_filter(Hh, 1.3).T
+        flat = np.sort(Hh.ravel())[::-1]
+        cum = np.cumsum(flat) / flat.sum()
+        lev = sorted(flat[np.searchsorted(cum, q)] for q in (0.95, 0.68))
+        ap.contour((xe[:-1] + xe[1:]) / 2, (ye[:-1] + ye[1:]) / 2, Hh, levels=lev, colors=[col], linewidths=2.2)
+        ap.plot([], [], color=col, lw=2.2, label=lab)
+    ap.plot(*T.THETA_STAR[[i, j]], "*", ms=24, color=TRUE_COL, mec="white", label=r"$\theta^\star$")
+    ap.set_xlim(lo[0], hi[0])
+    ap.set_ylim(lo[1], hi[1])
+    ap.set_xlabel(T.LABELS[i])
+    ap.set_ylabel(T.LABELS[j] + r" [$R_{\rm J}$]")
+    ap.legend(frameon=False, loc="upper left")
+    ap.set_title("Posterior", loc="left", fontsize=27)
+
+    # posterior predictive check
+    asp.fill_between(T.WL_OUT, lo95, hi95, color=NPE_COL, alpha=0.25, lw=0)
+    asp.plot(T.WL_OUT, med, color=NPE_COL, lw=2, label=r"$f(\theta)$, $\theta \sim q_\phi(\theta|x)$")
+    asp.errorbar(T.WL_OUT, x, yerr=SIGMA, fmt="o", ms=4, color="#222", elinewidth=1, label=r"observed $x$")
+    asp.set_ylabel("Flux")
+    asp.legend(frameon=False, loc="upper right")
+    asp.set_title("Posterior predictive check", loc="left", fontsize=27)
+    plt.setp(asp.get_xticklabels(), visible=False)
+    r = (x - med) / SIGMA
+    ar.axhspan(-2, 2, color="#e6e6e6", lw=0)
+    ar.axhline(0, color="#999", lw=1)
+    ar.plot(T.WL_OUT, r, "o", ms=4, color="#222")
+    ar.set_xlim(0.95, 2.45)
+    ar.set_ylim(-7, 4)
+    ar.set_yticks([-6, -3, 0, 3])
+    ar.set_ylabel(r"Resid. [$\sigma$]")
+    ar.set_xlabel("Wavelength [μm]")
+    print("NPE median", np.median(a, 0).round(2), "MCMC median", np.median(m, 0).round(2))
+    print("min residual", r.min().round(1), "at", T.WL_OUT[np.argmin(r)].round(3))
+    fig.savefig("figures/toy-misspec.png", dpi=DPI)
 
 
 # ------------------------------------------------------------------ observed spectrum
@@ -642,4 +708,4 @@ def is_anim(n=3000, i=0, j=3, FPS=24, seed=4):
 
 
 if __name__ == "__main__":
-    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
+    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "misspec": misspec, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
