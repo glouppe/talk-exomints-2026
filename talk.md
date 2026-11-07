@@ -338,7 +338,7 @@ class: middle
 
 ## Prior predictive check
 
-Does the .bold[forward model] agree with what we know? Draw $\theta \sim p(\theta)$, simulate, and compare summary statistics with domain knowledge, before seeing any data.
+Before seeing any data, we check the .bold[forward model] against domain knowledge: we draw $\theta \sim p(\theta)$, simulate, and compare summary statistics with known objects.
 
 .center[
 <video poster="figures/toy-prior-pc.png?v=3" muted loop autoplay playsinline class="anim">
@@ -348,13 +348,13 @@ Does the .bold[forward model] agree with what we know? Draw $\theta \sim p(\thet
 
 ???
 
-Before any data, check the prior and the simulator together. Draw parameters from the prior, simulate, and look at the spectra. Raw spectra are hard to judge by eye, so reduce each one to a summary statistic that we know from other objects. Here, the J − K colour. Known brown dwarfs and directly imaged planets lie roughly between −1 and 3.
+We check the prior and the simulator together, before any data. We draw parameters from the prior and simulate. Spectra are hard to judge by eye, so we reduce each one to a summary statistic measured on other objects: here, the J − K colour. Known brown dwarfs and directly imaged planets lie roughly between −1 and 3.
 
-Our toy fails: 42% of the prior draws are redder than any known object. The prior ranges are too broad, or the toy physics too crude, or both. In a real analysis, this is the moment to revisit the prior or the simulator. Other statistics work the same way: the depth of the water or methane bands, the total flux.
+Our toy fails: 42% of the prior draws are redder than any known object. The prior is too broad, the physics too crude, or both. In a real analysis, we would revise one of them here. Band depths or the total flux serve the same purpose.
 
-This is a check against what we know, not against the observation. Tuning the prior to the data we are about to analyze would use the data twice.
+The check uses domain knowledge, not the observation. Tuning the prior to the data under analysis would use the data twice.
 
-The check is free: these simulations are exactly the training set of neural posterior estimation.
+The check costs nothing: these simulations are the training set of neural posterior estimation.
 
 ---
 
