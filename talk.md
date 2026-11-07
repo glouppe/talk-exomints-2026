@@ -749,20 +749,14 @@ So: a posterior predictive check tells us each model can fit. The evidence tells
 
 class: middle
 
+<img src="figures/mc-bayes.png" style="display: block; margin: 0 auto; width: 46%;">
+
 The Bayes factor $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ compares the evidence of the two models. Three ways to estimate it:
 
-<div class="grid">
-<div class="kol-5-12" style="width: 38%; padding-top: 2.5em; padding-right: 1.5em;">
-<img src="figures/mc-bayes.png" style="width: 100%;">
-</div>
-<div class="kol-7-12 evidence-col" style="width: 62%;">
-<p>Nested sampling, from scratch:</p>
-$$p(x|M) \approx \sum_i p(x|\theta_i, M) \, \Delta X_i$$
-<p>Importance sampling, with $\theta_i \sim q_\phi(\theta|x)$:</p>
-$$p(x|M) \approx \frac{1}{n} \sum_i \frac{p(x|\theta_i, M) \, p(\theta_i|M)}{q_\phi(\theta_i|x)}$$
-<p>Classifier, with $d_\psi(x) \approx p(\text{cloudy}|x)$:</p>
-$$\log B \approx \log \frac{d_\psi(x)}{1 - d_\psi(x)}$$
-</div>
+<div class="evidence-rows">
+<div><span>Nested sampling</span>$$p(x|M) \approx \sum_i p(x|\theta_i, M) \, \Delta X_i$$</div>
+<div><span>Importance sampling</span>$$p(x|M) \approx \frac{1}{n} \sum_i \frac{p(x|\theta_i, M) \, p(\theta_i|M)}{q_\phi(\theta_i|x)}, \quad \theta_i \sim q_\phi(\theta|x)$$</div>
+<div><span>Classifier</span>$$\log B \approx \log \frac{d_\psi(x)}{1 - d_\psi(x)}, \quad d_\psi(x) \approx p(\text{cloudy}|x)$$</div>
 </div>
 
 .footnote[Classifier: [Radev et al](https://arxiv.org/abs/2004.10629), 2020. Model comparison without the evidence: MIRA, [Sharief et al](https://arxiv.org/abs/2605.02014), ICML 2026.]

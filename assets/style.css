@@ -745,6 +745,28 @@ img {
     margin-bottom: 0.4em;
 }
 
+/* Estimators: label on the left, equation on the right, one row each */
+.evidence-rows > div {
+    display: flex;
+    align-items: center;
+}
+
+.evidence-rows > div > span {
+    flex: 0 0 30%;
+    color: #555;
+}
+
+.evidence-rows .katex-display {
+    flex: 1;
+    margin: 0.15em 0;
+    text-align: left;
+}
+
+.evidence-rows .katex-display > .katex {
+    text-align: left;
+    font-size: 15pt;
+}
+
 /* Narrower caption box, for crowded full-screen figures */
 .narrow-box {
     width: 40%;
