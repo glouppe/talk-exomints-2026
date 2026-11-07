@@ -588,11 +588,9 @@ class: middle
 
 ## When the model is wrong
 
-A new observation of the same planet, with an absorption band at 1.52 μm that the simulator does not have.
-
 .center.width-100[![](figures/toy-misspec-obs.png)]
 
-.invisible[Both posteriors are .bold[confident and wrong]. Calibration cannot tell: it is measured on simulated spectra, which never have this band. The residuals can: 5 to 6σ at the band.]
+A new observation of the same planet, with an absorption band at 1.52 μm that the simulator does not have.
 
 ???
 
@@ -600,12 +598,7 @@ Every result so far assumed that the simulator is right. Here it is not. Same pl
 
 ---
 
-count: false
 class: middle
-
-## When the model is wrong
-
-A new observation of the same planet, with an absorption band at 1.52 μm that the simulator does not have.
 
 .center.width-100[![](figures/toy-misspec.png)]
 

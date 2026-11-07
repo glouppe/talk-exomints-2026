@@ -996,8 +996,3 @@ video.anim {
 .footnote .katex {
     font-size: 1em;
 }
-
-/* Reserve space for content shown on a later build */
-.invisible {
-    visibility: hidden;
-}
