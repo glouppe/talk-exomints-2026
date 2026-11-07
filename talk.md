@@ -698,13 +698,13 @@ class: middle
 ## Flow matching posterior estimation (FMPE)
 
 .center[
-<video poster="figures/fm-flow.png?v=2" muted loop autoplay playsinline class="anim" style="width: 44%;">
+<video poster="figures/fm-flow.png?v=2" muted loop autoplay playsinline class="anim" style="width: 38%;">
 <source src="figures/videos/fm-flow.mp4?v=2" type="video/mp4">
 </video>
 ]
 
-Noise $\theta\_0 \sim \mathcal{N}(0, I)$ flows along a vector field $v\_\phi(\theta\_t, t; x)$, from $t = 0$ to $1$. The density is exact, by the continuous change of variables:
-$$\log q\_\phi(\theta | x) = \log \mathcal{N}(\theta\_0; 0, I) - \int\_0^1 \nabla \cdot v\_\phi(\theta\_t, t; x) \, dt.$$
+Noise $\theta\_0 \sim \mathcal{N}(0, I)$ flows along a vector field $v\_\phi(\theta\_t, t; x)$, from $t = 0$ to $1$. As for discrete flows, the density is exact: map $\theta$ back to noise, from $t = 1$ to $0$, and sum along the way.
+$$\begin{aligned} \log q\_\phi(\theta | x) &= \log \mathcal{N}(\theta\_0; 0, I) + \int\_1^0 \text{tr} \left( \frac{\partial v\_\phi(\theta\_t, t; x)}{\partial \theta\_t} \right) dt \\\\ &= \log \mathcal{N}(\theta\_0; 0, I) + \int\_1^0 \nabla \cdot v\_\phi(\theta\_t, t; x) \, dt. \end{aligned}$$
 
 Train the vector field by regression, along straight paths $\theta\_t = (1-t)\, \theta\_0 + t\, \theta$:
 $$\min\_\phi \; \mathbb{E}\_{t \sim \mathcal{U}(0,1),\; \theta\_0 \sim \mathcal{N}(0, I),\; (\theta, x) \sim p(\theta, x)} \left[ \left\Vert v\_\phi(\theta\_t, t; x) - (\theta - \theta\_0) \right\Vert^2 \right].$$
@@ -715,7 +715,7 @@ $$\min\_\phi \; \mathbb{E}\_{t \sim \mathcal{U}(0,1),\; \theta\_0 \sim \mathcal{
 
 The animation shows a continuous flow: the samples move along a vector field that changes smoothly with time, from noise to a posterior with two modes. To sample, we start from noise and follow the vector field, by solving an ODE.
 
-The density can still be computed exactly, which matters for what comes next. Compare with the discrete flow: there, the Gaussian density was corrected by the log-determinant of the Jacobian of each transformation. Here, the same idea in the limit of infinitely many infinitesimal steps: the sum becomes an integral, and the log-determinant becomes the divergence of the vector field, the trace of its Jacobian, along the path.
+The density can still be computed exactly, which matters for what comes next. Compare with the discrete flow: there, we mapped the parameters to the noise, and corrected the Gaussian density by the log-determinant of the Jacobian of each transformation. Here, we do the same: we follow the flow backwards, from the parameters at time one to the noise at time zero, hence the integral from one to zero. In the limit of infinitely many infinitesimal steps, the sum becomes an integral, and the log-determinant becomes the trace of the Jacobian of the vector field. For a small step, the log-determinant of the identity plus a small Jacobian is its trace. With the triangular Jacobians of the discrete flow, the log-determinant was already a sum of diagonal terms: the trace is the same sum. The trace of the Jacobian is also the divergence of the vector field: how much the flow spreads samples apart, and so lowers their density.
 
 How is the vector field trained? By flow matching. Take a sample of noise, and a pair of parameters and spectrum from the simulator. Draw the straight line between the noise and the parameters. At a random time along the line, the network should point along the line. It is a simple regression: no invertibility constraint on the network, which makes it more flexible and easier to scale.
 
