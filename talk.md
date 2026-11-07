@@ -334,6 +334,28 @@ That is the simulator: draw $\theta$, compute $z$, compute $f$, add noise. Easy 
 
 ---
 
+class: middle
+
+## Prior predictive check
+
+Can the .bold[forward model] produce the observation? Draw $\theta \sim p(\theta)$, simulate, compare.
+
+.center[
+<video poster="figures/toy-prior-pc.png" muted autoplay playsinline class="anim">
+<source src="figures/videos/toy-prior-pc.mp4" type="video/mp4">
+</video>
+]
+
+???
+
+Before any inference, check the prior and the simulator together. Draw parameters from the prior, simulate, and look at the spectra you get. Then put the observation on top.
+
+Here, the observation falls inside what the model produces. Good. If it fell outside, for instance a flux level or a band shape that no prior draw reaches, no inference algorithm could fix that. Change the prior or the model first.
+
+This check is cheap, and it is not an extra cost: these simulations are exactly the training set of neural posterior estimation. It is the prior-side twin of the posterior predictive check that we will do after inference.
+
+---
+
 class: black-slide
 
 .bg-video[<video autoplay muted loop playsinline poster="figures/galaxy-1.jpg?v=6" src="figures/videos/galaxy-1.mp4?v=6"></video>]

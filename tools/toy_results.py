@@ -4,6 +4,7 @@
     python tools/toy_results.py loss       # training curve -> figures/toy-loss.png
     python tools/toy_results.py corner     # NPE vs MCMC on the benchmark -> figures/toy-corner.png
     python tools/toy_results.py ppc        # posterior predictive check -> figures/toy-ppc.png
+    python tools/toy_results.py prior_pc   # animation: prior predictive check -> videos/toy-prior-pc.mp4
     python tools/toy_results.py amortize   # animation: new spectra, instant posteriors -> videos/toy-amortize.mp4
 
 Model and samples are read from $TOY_OUT (default .render/data/toy/). Run with .render/venv (torch, zuko, corner).
@@ -180,6 +181,48 @@ def ppc(n=200):
     ax.legend(frameon=False, loc="upper right")
     fig.tight_layout()
     fig.savefig("figures/toy-ppc.png")
+
+
+# ------------------------------------------------------------------ prior predictive check
+
+def prior_pc(n=120, FPS=24, seed=3):
+    """Animation: spectra simulated from the prior pile up, then the observed spectrum appears on top."""
+    p = np.load(OUT + "posterior.npz")
+    sim = T.Simulator(noisy=False, seed=seed)
+    f = np.array([sim.clean(t) for t in sim.sample_prior(n)])
+    W, H, DPI = 1600, 800, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    ax = fig.add_axes([0.08, 0.13, 0.89, 0.8])
+    out = encode("figures/videos/toy-prior-pc.mp4", W, H, FPS)
+    PRIOR_COL = "#5b82b5"
+
+    def frame(m, show_obs, hold=1):
+        ax.cla()
+        for k in range(m):
+            ax.plot(T.WL_OUT, f[k], color=PRIOR_COL, lw=1.2, alpha=0.9 if (k == m - 1 and not show_obs) else 0.25)
+        if show_obs:
+            ax.errorbar(T.WL_OUT, p["x_obs"], yerr=SIGMA, fmt="o", ms=5, color="#222", elinewidth=1,
+                        label=r"observed $x$", zorder=5)
+            ax.plot([], [], color=PRIOR_COL, lw=2, label=r"$f(\theta)$, $\theta \sim p(\theta)$")
+            ax.legend(frameon=True, framealpha=0.92, edgecolor="none", loc="upper right")
+        ax.set_xlim(0.95, 2.45)
+        ax.set_ylim(-0.5, 6)
+        ax.set_xlabel("Wavelength [μm]")
+        ax.set_ylabel(r"Flux [$10^{-16}$ W m$^{-2}$ μm$^{-1}$]")
+        fig.canvas.draw()
+        buf = np.asarray(fig.canvas.buffer_rgba()).tobytes()
+        for _ in range(hold):
+            out.stdin.write(buf)
+
+    frame(0, False, int(0.5 * FPS))
+    for m in range(1, n + 1):  # slow at first, then faster
+        frame(m, False, 4 if m <= 8 else 1)
+    frame(n, False, int(0.8 * FPS))
+    frame(n, True, int(6 * FPS))
+    fig.savefig("figures/toy-prior-pc.png", dpi=DPI)
+    out.stdin.close()
+    out.wait()
 
 
 # ------------------------------------------------------------------ observed spectrum
@@ -569,4 +612,4 @@ def is_anim(n=3000, i=0, j=3, FPS=24, seed=4):
 
 
 if __name__ == "__main__":
-    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
+    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
