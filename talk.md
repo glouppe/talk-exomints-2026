@@ -785,6 +785,8 @@ class: black-slide, middle
 .bg-video[<video autoplay muted loop playsinline poster="figures/exo-x-poster.jpg" src="figures/videos/exo-x.mp4" style="filter: brightness(0.55);"></video>]
 
 .punch[
+.punch-title[Summary]
+
 Inference requires a simulator, not a likelihood.
 
 A neural posterior estimator is trained once; it then gives the posterior of any spectrum in seconds.
@@ -792,11 +794,13 @@ A neural posterior estimator is trained once; it then gives the posterior of any
 Calibration tests the network; posterior predictive checks test the model.
 
 An overdispersed posterior is safer than an overconfident one.
+
+With a likelihood, importance sampling corrects the network and gives the evidence, for model comparison.
 ]
 
 ???
 
-Four things to remember.
+Five things to remember.
 
 Inference requires a simulator, not a likelihood. The prior, the physics and the instrument make a simulator; inference only needs to run it. So make the simulator as realistic as you can, rather than as convenient as the sampler needs.
 
