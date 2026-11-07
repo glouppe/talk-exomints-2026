@@ -422,8 +422,7 @@ class: middle
 ]
 
 By the change of variables, the density is exact,
-$$\log q\_\phi(\theta | x) = \log \mathcal{N}(u; 0, I) + \sum\_{k=1}^{3} \log \left| \det J\_{t\_k} \right|,$$
-where $u = t\_3 \circ t\_2 \circ t\_1(\theta)$.
+$$\log q\_\phi(\theta | x) = \log \mathcal{N}(t\_3 \circ t\_2 \circ t\_1(\theta); 0, I) + \sum\_{k=1}^{3} \log \left| \det J\_{t\_k} \right|.$$
 
 ???
 
