@@ -602,7 +602,7 @@ class: middle
 
 .center.width-100[![](figures/toy-misspec.png)]
 
-Both posteriors are .bold[confident and wrong]. Calibration cannot tell: it is measured on simulated spectra, which never have this band. The residuals can: 5 to 6σ at the band.
+.center[Both posteriors are .bold[confident and wrong].]
 
 .footnote[Detecting and handling misspecification: [Schmitt et al](https://arxiv.org/abs/2112.08866), 2023; [Ward et al](https://arxiv.org/abs/2210.06564), NeurIPS 2022.]
 
