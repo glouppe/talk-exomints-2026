@@ -514,7 +514,7 @@ class: middle
 
 ## Calibration
 
-A posterior is .bold[calibrated] if its 90% credible regions contain the true parameters 90% of the time, and likewise at every level. We check the inference network on $10^3$ simulated observations.
+A posterior is .bold[calibrated] if its 90% credible regions contain the true parameters 90% of the time, and likewise at every level.
 
 .center[
 <video poster="figures/toy-coverage.png" muted loop autoplay playsinline class="anim">
