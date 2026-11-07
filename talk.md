@@ -65,7 +65,7 @@ class: black-slide
 .overlay-box.overlay-top-left[
 .overlay-title[Ocean currents]
 
-.italic[Parameters:] the global constants $\theta$ of the ocean model, such as its viscosity $\nu$. Same equations, different values, different oceans.
+.italic[Parameters:] the global constants $\theta$ of the ocean model, such as its viscosity $\nu$.
 ]
 
 .footnote[Illustration: 2D turbulence on a $\beta$-plane, same forcing, three viscosities; current speed.]
@@ -179,7 +179,7 @@ background-size: cover
 .overlay-box.overlay-intro[
 .overlay-title[Exoplanets]
 
-.italic[Parameters:] the bulk properties $\theta$, C/O, metallicity, gravity, radius, clouds, mixing. Different values, different atmospheres.
+.italic[Parameters:] the bulk properties $\theta$, C/O, metallicity, gravity, radius, clouds, mixing.
 ]
 
 .footnote[Ten hot Jupiters studied with Hubble ([Sing et al](https://doi.org/10.1038/nature16068), Nature 2016). Illustration: ESA/Hubble & NASA.]
@@ -260,7 +260,7 @@ class: middle
 
 ## A minimal exoplanet simulator
 
-Prior, $\theta \sim p(\theta)$: six numbers, each uniform over a range.
+Prior, $\theta \sim p(\theta)$: six parameters, each uniform over a range.
 
 .center[
 <video poster="figures/toy-walk-1.png" muted loop autoplay playsinline class="anim">
@@ -318,7 +318,7 @@ class: middle
 
 ## A minimal exoplanet simulator
 
-Instrument, $x \sim p(x | z)$: binned, with noise. This is all we observe.
+Instrument, $x \sim p(x | z)$: binned, with noise.
 
 .center[
 <video poster="figures/toy-walk-4.png" muted loop autoplay playsinline class="anim">
@@ -403,8 +403,6 @@ The expectation runs over pairs $(\theta, x)$ from the simulator, so that the li
 Up to a constant, this loss is the expected divergence to the true posterior,
 $$\mathbb{E}\_{p(x)} \, \text{KL}\big( p(\theta|x) \, \Vert \, q\_\phi(\theta|x) \big).$$
 
-.success[With enough simulations and network capacity, the trained network is the posterior of every observation.]
-
 ???
 
 Neural posterior estimation trains a network that takes an observation $x$ and returns a probability distribution over the parameters $\theta$. The output is a whole distribution, not a point estimate. The network is typically a normalizing flow, which we open on the next slide.
@@ -423,8 +421,9 @@ class: middle
 </video>
 ]
 
-The density is exact, by the change of variables, with $u = t\_3 \circ t\_2 \circ t\_1(\theta)$:
-$$\log q\_\phi(\theta | x) = \log \mathcal{N}(u; 0, I) + \sum\_{k=1}^{3} \log \left| \det J\_{t\_k} \right|.$$
+By the change of variables, the density is exact,
+$$\log q\_\phi(\theta | x) = \log \mathcal{N}(u; 0, I) + \sum\_{k=1}^{3} \log \left| \det J\_{t\_k} \right|,$$
+where $u = t\_3 \circ t\_2 \circ t\_1(\theta)$.
 
 ???
 
@@ -442,7 +441,9 @@ class: middle
 
 ## Training
 
-We simulate pairs $(\theta\_i, x\_i)$ from the prior and the simulator, and minimize the loss over them, with the noise added on the fly.
+We simulate $N$ pairs $(\theta\_i, x\_i) \sim p(\theta, x)$ and minimize the empirical estimate of the loss,
+$$L(\phi) = \mathbb{E}\_{p(\theta, x)} \left[ -\log q\_\phi(\theta | x) \right] \approx \frac{1}{N} \sum\_{i=1}^{N} -\log q\_\phi(\theta\_i | x\_i),$$
+with the noise added on the fly.
 
 .center[
 <video poster="figures/toy-training.png" muted loop autoplay playsinline class="anim">
@@ -464,7 +465,7 @@ class: middle
 
 ## Amortization
 
-The network is trained once. Then, any new spectrum gets its posterior in a fraction of a second.
+Once trained, the network gives the posterior of any new spectrum in a fraction of a second.
 
 .center[
 <video poster="figures/toy-gallery.png?v=3" muted loop autoplay playsinline class="anim">
@@ -488,7 +489,7 @@ class: middle
 
 ## Results on the toy problem
 
-An observed spectrum $x\_{\rm obs}$, simulated from known parameters $\theta^\star$ (hidden from the methods).
+Consider an observed spectrum $x\_{\rm obs}$, simulated from known parameters $\theta^\star$ hidden from the methods.
 
 .center.width-100[![](figures/toy-xobs.png)]
 
@@ -544,7 +545,7 @@ class: middle
 
 .avatars[![](figures/faces/arnaud.jpg)![](figures/faces/joeri.png)![](figures/faces/frozet.jpg)]
 
-Neural posteriors can be .bold[overconfident], even when trained as recommended. Better be overdispersed than overconfident.
+Neural posteriors can be .bold[overconfident], even when trained as recommended. Balancing the training makes them conservative, which is preferable for science.
 
 .grid[
 .kol-1-2[.center.width-100[![](figures/coverage-crisis.png)]]
@@ -591,7 +592,7 @@ class: middle
 
 .center.width-100[![](figures/toy-misspec-obs.png)]
 
-A new observation of the same planet, with an absorption band at 1.52 μm that the simulator does not have.
+Consider now a new observation of the same planet, with an absorption band at 1.52 μm that the simulator does not have.
 
 ???
 
@@ -674,7 +675,7 @@ class: middle
 
 ## Beyond normalizing flows
 
-NPE is agnostic to the choice of density estimator $q\_\phi(\theta | x)$.
+NPE is agnostic to the choice of density estimator $q\_\phi(\theta | x)$. A discrete flow composes a few invertible transformations, whose architecture must keep the Jacobian tractable. A continuous flow integrates a vector field given by an unconstrained network, which makes it more flexible.
 
 .grid[
 .kol-1-2[.center.width-100[![](figures/gebhard-dnf.png)]]
@@ -705,7 +706,7 @@ class: middle
 
 <br>
 
-<div class="center">Noise $\theta_0 \sim \mathcal{N}(0, I)$ flows along a vector field $v_\phi(\theta_t, t; x)$, from $t = 0$ to $1$.</div>
+<div class="center">Noise $\theta_0 \sim \mathcal{N}(0, I)$ flows along a vector field $v_\phi(\theta_t, t; x)$, from $t = 0$ to $t = 1$, where it follows the posterior $q_\phi(\theta | x)$.</div>
 
 .footnote[Animation: the exact flow-matching vector field towards a two-mode target.]
 
@@ -717,11 +718,11 @@ The animation shows a continuous flow: the samples move along a vector field tha
 
 class: middle
 
-As for discrete flows, the density is exact: map $\theta$ back to noise, from $t = 1$ to $0$, and sum along the way.
-$$\begin{aligned} \log q\_\phi(\theta | x) &= \log \mathcal{N}(\theta\_0; 0, I) + \int\_1^0 \text{tr} \left( \frac{\partial v\_\phi(\theta\_t, t; x)}{\partial \theta\_t} \right) dt \\\\ &= \log \mathcal{N}(\theta\_0; 0, I) + \int\_1^0 \nabla \cdot v\_\phi(\theta\_t, t; x) \, dt. \end{aligned}$$
-
-Train the vector field by regression, along straight paths $\theta\_t = (1-t)\, \theta\_0 + t\, \theta$:
-$$\min\_\phi \; \mathbb{E}\_{t \sim \mathcal{U}(0,1),\; \theta\_0 \sim \mathcal{N}(0, I),\; (\theta, x) \sim p(\theta, x)} \left[ \left\Vert v\_\phi(\theta\_t, t; x) - (\theta - \theta\_0) \right\Vert^2 \right].$$
+As for discrete flows, the density is exact,
+$$\begin{aligned} \log q\_\phi(\theta | x) &= \log \mathcal{N}(\theta\_0; 0, I) + \int\_1^0 \text{tr} \left( \frac{\partial v\_\phi(\theta\_t, t; x)}{\partial \theta\_t} \right) dt \\\\ &= \log \mathcal{N}(\theta\_0; 0, I) + \int\_1^0 \nabla \cdot v\_\phi(\theta\_t, t; x) \, dt, \end{aligned}$$
+where $\theta\_0$ is the noise that $\theta$ flows back to at $t = 0$. The vector field is trained by regression along straight paths $\theta\_t = (1-t)\, \theta\_0 + t\, \theta$,
+$$\min\_\phi \; \mathbb{E}\_{t \sim \mathcal{U}(0,1),\; \theta\_0 \sim \mathcal{N}(0, I),\; (\theta, x) \sim p(\theta, x)} \left[ \left\Vert v\_\phi(\theta\_t, t; x) - (\theta - \theta\_0) \right\Vert^2 \right],$$
+which requires no integration of the flow.
 
 .footnote[[Dax et al](https://arxiv.org/abs/2305.17161), NeurIPS 2023.]
 
@@ -764,16 +765,15 @@ class: middle
 
 ## Cheat code: importance sampling
 
-When the likelihood can be evaluated, the network becomes a .bold[proposal]. Draw $\theta\_i \sim q\_\phi(\theta|x)$, then weight each sample by
-$$w\_i = \frac{p(x | \theta\_i) \, p(\theta\_i)}{q\_\phi(\theta\_i | x)}.$$
+When the likelihood can be evaluated, the network becomes a .bold[proposal]. Samples $\theta\_i \sim q\_\phi(\theta|x)$, weighted by
+$$w\_i = \frac{p(x | \theta\_i) \, p(\theta\_i)}{q\_\phi(\theta\_i | x)},$$
+follow the .bold[exact] posterior.
 
 .center[
 <video poster="figures/toy-is.png" muted loop autoplay playsinline class="anim">
 <source src="figures/videos/toy-is.mp4" type="video/mp4">
 </video>
 ]
-
-Weighted samples follow the .bold[exact] posterior. The efficiency $\varepsilon = (\sum\_i w\_i)^2 / (n \sum\_i w\_i^2)$ flags a poor network. The mean weight estimates the .bold[evidence] $p(x)$, needed for model comparison.
 
 ???
 
@@ -827,7 +827,7 @@ The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ com
 
 <div class="evidence-rows">
 <div><span>Nested sampling</span>$$p(x|M) \approx \sum_i p(x|\theta_i, M) \, \Delta X_i$$</div>
-<div><span>Importance sampling</span>$$p(x|M) \approx \frac{1}{n} \sum_i \frac{p(x|\theta_i, M) \, p(\theta_i|M)}{q_\phi(\theta_i|x)}, \quad \theta_i \sim q_\phi(\theta|x)$$</div>
+<div><span>Importance sampling</span>$$p(x|M) \approx \frac{1}{n} \sum_i \frac{p(x|\theta_i, M) \, p(\theta_i|M)}{q_\phi(\theta_i|x)} = \frac{1}{n} \sum_i w_i$$</div>
 <div><span>Classifier</span>$$\log B \approx \log \frac{d_\psi(x)}{1 - d_\psi(x)}, \quad d_\psi(x) \approx p(\text{cloudy}|x)$$</div>
 </div>
 
