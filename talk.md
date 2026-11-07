@@ -338,21 +338,21 @@ class: middle
 
 ## Prior predictive check
 
-Can the .bold[forward model] produce the observation? Draw $\theta \sim p(\theta)$, simulate, compare.
+Does the .bold[forward model] encode what we know? Draw $\theta \sim p(\theta)$, simulate, and look, before seeing any data.
 
 .center[
-<video poster="figures/toy-prior-pc.png" muted autoplay playsinline class="anim">
-<source src="figures/videos/toy-prior-pc.mp4" type="video/mp4">
+<video poster="figures/toy-prior-pc.png?v=2" muted autoplay playsinline class="anim">
+<source src="figures/videos/toy-prior-pc.mp4?v=2" type="video/mp4">
 </video>
 ]
 
 ???
 
-Before any inference, check the prior and the simulator together. Draw parameters from the prior, simulate, and look at the spectra you get. Then put the observation on top.
+Before any data, check the prior and the simulator together. Draw parameters from the prior, simulate, and look at the spectra you get. Do they look like the objects we have in mind? Are the bands where we expect them? Is the range of fluxes physically reasonable? Here, the fluxes span four orders of magnitude, mostly from the temperature range, which matters most at short wavelengths.
 
-Here, the observation falls inside what the model produces. Good. If it fell outside, for instance a flux level or a band shape that no prior draw reaches, no inference algorithm could fix that. Change the prior or the model first.
+This is a check against what we know, not against the observation. Tuning the prior to the data we are about to analyze would use the data twice.
 
-This check is cheap, and it is not an extra cost: these simulations are exactly the training set of neural posterior estimation. It is the prior-side twin of the posterior predictive check that we will do after inference.
+The check is free: these simulations are exactly the training set of neural posterior estimation.
 
 ---
 

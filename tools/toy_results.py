@@ -186,8 +186,7 @@ def ppc(n=200):
 # ------------------------------------------------------------------ prior predictive check
 
 def prior_pc(n=120, FPS=24, seed=3):
-    """Animation: spectra simulated from the prior pile up, then the observed spectrum appears on top."""
-    p = np.load(OUT + "posterior.npz")
+    """Animation: spectra simulated from the prior pile up. No observation: the check is against what we know."""
     sim = T.Simulator(noisy=False, seed=seed)
     f = np.array([sim.clean(t) for t in sim.sample_prior(n)])
     W, H, DPI = 1600, 800, 100
@@ -197,19 +196,16 @@ def prior_pc(n=120, FPS=24, seed=3):
     out = encode("figures/videos/toy-prior-pc.mp4", W, H, FPS)
     PRIOR_COL = "#5b82b5"
 
-    def frame(m, show_obs, hold=1):
+    def frame(m, last, hold=1):
         ax.cla()
         for k in range(m):
-            ax.plot(T.WL_OUT, f[k], color=PRIOR_COL, lw=1.2, alpha=0.9 if (k == m - 1 and not show_obs) else 0.25)
-        if show_obs:
-            ax.errorbar(T.WL_OUT, p["x_obs"], yerr=SIGMA, fmt="o", ms=5, color="#222", elinewidth=1,
-                        label=r"observed $x$", zorder=5)
-            ax.plot([], [], color=PRIOR_COL, lw=2, label=r"$f(\theta)$, $\theta \sim p(\theta)$")
-            ax.legend(frameon=True, framealpha=0.92, edgecolor="none", loc="upper right")
+            ax.plot(T.WL_OUT, f[k], color=PRIOR_COL, lw=1.2, alpha=0.9 if (k == m - 1 and not last) else 0.3)
         ax.set_xlim(0.95, 2.45)
-        ax.set_ylim(-0.5, 6)
+        ax.set_yscale("log")
+        ax.set_ylim(1e-4, 3e2)
         ax.set_xlabel("Wavelength [μm]")
         ax.set_ylabel(r"Flux [$10^{-16}$ W m$^{-2}$ μm$^{-1}$]")
+        ax.set_title(r"$f(\theta)$, $\theta \sim p(\theta)$", loc="left", fontsize=27)
         fig.canvas.draw()
         buf = np.asarray(fig.canvas.buffer_rgba()).tobytes()
         for _ in range(hold):
@@ -218,7 +214,6 @@ def prior_pc(n=120, FPS=24, seed=3):
     frame(0, False, int(0.5 * FPS))
     for m in range(1, n + 1):  # slow at first, then faster
         frame(m, False, 4 if m <= 8 else 1)
-    frame(n, False, int(0.8 * FPS))
     frame(n, True, int(6 * FPS))
     fig.savefig("figures/toy-prior-pc.png", dpi=DPI)
     out.stdin.close()
