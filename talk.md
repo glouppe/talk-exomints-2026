@@ -292,6 +292,8 @@ Physics, $z \sim p(z | \theta)$: a temperature profile, chemistry, and a cloud d
 
 From the parameters, the physics gives the atmosphere. Here, a temperature profile, the abundances of water, methane and carbon monoxide along it, and a cloud deck. This is $z$. Watch methane: it appears where the atmosphere is cool enough.
 
+As in retrieval codes such as petitRADTRANS, the profile is parameterized, not self-consistent: a grey Eddington profile set by the internal temperature and the gravity. The chemistry follows a fixed rule of temperature, pressure, metallicity and C/O, and the clouds are a deck with a parameterized top.
+
 ---
 
 class: middle
@@ -750,6 +752,9 @@ class: middle
 The Bayes factor $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ compares the evidence of the two models. Three ways to estimate it:
 
 <div class="grid">
+<div class="kol-5-12" style="width: 38%; padding-top: 2.5em; padding-right: 1.5em;">
+<img src="figures/mc-bayes.png" style="width: 100%;">
+</div>
 <div class="kol-7-12 evidence-col" style="width: 62%;">
 <p>Nested sampling, from scratch:</p>
 $$p(x|M) \approx \sum_i p(x|\theta_i, M) \, \Delta X_i$$
@@ -757,9 +762,6 @@ $$p(x|M) \approx \sum_i p(x|\theta_i, M) \, \Delta X_i$$
 $$p(x|M) \approx \frac{1}{n} \sum_i \frac{p(x|\theta_i, M) \, p(\theta_i|M)}{q_\phi(\theta_i|x)}$$
 <p>Classifier, with $d_\psi(x) \approx p(\text{cloudy}|x)$:</p>
 $$\log B \approx \log \frac{d_\psi(x)}{1 - d_\psi(x)}$$
-</div>
-<div class="kol-5-12" style="width: 38%; padding-top: 2.5em;">
-<img src="figures/mc-bayes.png" style="width: 100%;">
 </div>
 </div>
 
