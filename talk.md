@@ -338,17 +338,19 @@ class: middle
 
 ## Prior predictive check
 
-Does the .bold[forward model] encode what we know? Draw $\theta \sim p(\theta)$, simulate, and look, before seeing any data.
+Does the .bold[forward model] agree with what we know? Draw $\theta \sim p(\theta)$, simulate, and compare summary statistics with domain knowledge, before seeing any data.
 
 .center[
-<video poster="figures/toy-prior-pc.png?v=2" muted autoplay playsinline class="anim">
-<source src="figures/videos/toy-prior-pc.mp4?v=2" type="video/mp4">
+<video poster="figures/toy-prior-pc.png?v=3" muted autoplay playsinline class="anim">
+<source src="figures/videos/toy-prior-pc.mp4?v=3" type="video/mp4">
 </video>
 ]
 
 ???
 
-Before any data, check the prior and the simulator together. Draw parameters from the prior, simulate, and look at the spectra you get. Do they look like the objects we have in mind? Are the bands where we expect them? Is the range of fluxes physically reasonable? Here, the fluxes span four orders of magnitude, mostly from the temperature range, which matters most at short wavelengths.
+Before any data, check the prior and the simulator together. Draw parameters from the prior, simulate, and look at the spectra. Raw spectra are hard to judge by eye, so reduce each one to a summary statistic that we know from other objects. Here, the J − K colour. Known brown dwarfs and directly imaged planets lie roughly between −1 and 3.
+
+Our toy fails: 42% of the prior draws are redder than any known object. The prior ranges are too broad, or the toy physics too crude, or both. In a real analysis, this is the moment to revisit the prior or the simulator. Other statistics work the same way: the depth of the water or methane bands, the total flux.
 
 This is a check against what we know, not against the observation. Tuning the prior to the data we are about to analyze would use the data twice.
 

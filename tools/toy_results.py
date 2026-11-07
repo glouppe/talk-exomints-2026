@@ -185,19 +185,37 @@ def ppc(n=200):
 
 # ------------------------------------------------------------------ prior predictive check
 
-def prior_pc(n=120, FPS=24, seed=3):
-    """Animation: spectra simulated from the prior pile up. No observation: the check is against what we know."""
+VEGA_JHK = (3.13e-9, 1.13e-9, 4.28e-10)  # Vega flux density in J, H, K [W m^-2 μm^-1]
+
+
+def j_minus_k(f):
+    """J - K colour (Vega magnitudes, approximate) from binned spectra f (n, n_bins)."""
+    J = f[:, (T.WL_OUT >= 1.17) & (T.WL_OUT <= 1.33)].mean(1)
+    K = f[:, (T.WL_OUT >= 2.03) & (T.WL_OUT <= 2.37)].mean(1)
+    return -2.5 * np.log10(J / K) + 2.5 * np.log10(VEGA_JHK[0] / VEGA_JHK[2])
+
+
+def prior_pc(n=120, n_all=3000, FPS=24, seed=3):
+    """Animation: spectra simulated from the prior pile up, and a summary statistic of each (J - K colour) fills a
+    histogram, against the range of known brown dwarfs and directly imaged planets. No observation: the check is
+    against domain knowledge."""
     sim = T.Simulator(noisy=False, seed=seed)
-    f = np.array([sim.clean(t) for t in sim.sample_prior(n)])
+    f = np.array([sim.clean(t) for t in sim.sample_prior(n_all)])
+    jk = j_minus_k(f)
+    print(f"J-K: median {np.median(jk):.2f}, fraction > 3: {np.mean(jk > 3):.2f}, fraction in [-1, 3]: {np.mean((jk > -1) & (jk < 3)):.2f}")
     W, H, DPI = 1600, 800, 100
     plt.rcParams["font.size"] = 20
     fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
-    ax = fig.add_axes([0.08, 0.13, 0.89, 0.8])
+    ax = fig.add_axes([0.08, 0.13, 0.52, 0.76])
+    ah = fig.add_axes([0.69, 0.13, 0.29, 0.76])
     out = encode("figures/videos/toy-prior-pc.mp4", W, H, FPS)
     PRIOR_COL = "#5b82b5"
+    bins = np.linspace(-2, 9, 45)
+    KNOWN = (-1.0, 3.0)
 
-    def frame(m, last, hold=1):
+    def frame(m, m_hist, last, hold=1):
         ax.cla()
+        ah.cla()
         for k in range(m):
             ax.plot(T.WL_OUT, f[k], color=PRIOR_COL, lw=1.2, alpha=0.9 if (k == m - 1 and not last) else 0.3)
         ax.set_xlim(0.95, 2.45)
@@ -206,15 +224,32 @@ def prior_pc(n=120, FPS=24, seed=3):
         ax.set_xlabel("Wavelength [μm]")
         ax.set_ylabel(r"Flux [$10^{-16}$ W m$^{-2}$ μm$^{-1}$]")
         ax.set_title(r"$f(\theta)$, $\theta \sim p(\theta)$", loc="left", fontsize=27)
+        ah.axvspan(*KNOWN, color="#cccccc", alpha=0.5, lw=0)
+        ah.text(np.mean(KNOWN), 0.97, "known\nobjects", transform=ah.get_xaxis_transform(), ha="center", va="top",
+                color="#555")
+        top = 1.0
+        if m_hist:
+            counts, _, _ = ah.hist(jk[:m_hist], bins=bins, color=PRIOR_COL, alpha=0.85)
+            top = max(counts.max(), 3)
+            if not last and m_hist <= n:
+                ah.axvline(jk[m_hist - 1], color=PRIOR_COL, lw=2, ymax=0.7)
+        ah.set_xlim(bins[0], bins[-1])
+        ah.set_ylim(0, 1.45 * top)  # headroom for the label
+        ah.set_yticks([])
+        ah.spines["left"].set_visible(False)
+        ah.set_xlabel(r"$J - K$ colour [mag]")
+        ah.set_title("Summary statistic", loc="left", fontsize=27)
         fig.canvas.draw()
         buf = np.asarray(fig.canvas.buffer_rgba()).tobytes()
         for _ in range(hold):
             out.stdin.write(buf)
 
-    frame(0, False, int(0.5 * FPS))
+    frame(0, 0, False, int(0.5 * FPS))
     for m in range(1, n + 1):  # slow at first, then faster
-        frame(m, False, 4 if m <= 8 else 1)
-    frame(n, True, int(6 * FPS))
+        frame(m, m, False, 4 if m <= 8 else 1)
+    for m_hist in np.geomspace(n, n_all, int(1.5 * FPS)).astype(int):  # then many more draws
+        frame(n, m_hist, False)
+    frame(n, n_all, True, int(6 * FPS))
     fig.savefig("figures/toy-prior-pc.png", dpi=DPI)
     out.stdin.close()
     out.wait()
