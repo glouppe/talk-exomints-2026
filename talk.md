@@ -588,17 +588,32 @@ class: middle
 
 ## When the model is wrong
 
-The observation has an absorption band at 1.52 μm that the simulator does not have. Both posteriors are .bold[confident and wrong].
+A new observation of the same planet, with an absorption band at 1.52 μm that the simulator does not have.
+
+.center.width-100[![](figures/toy-misspec-obs.png)]
+
+.invisible[Both posteriors are .bold[confident and wrong]. Calibration cannot tell: it is measured on simulated spectra, which never have this band. The residuals can: 5 to 6σ at the band.]
+
+???
+
+Every result so far assumed that the simulator is right. Here it is not. Same planet, same noise, but I added an absorption band at 1.52 microns, where ammonia absorbs in cool atmospheres. Our simulator has no ammonia. In dashed grey, what the planet would look like without it.
+
+---
+
+count: false
+class: middle
+
+## When the model is wrong
+
+A new observation of the same planet, with an absorption band at 1.52 μm that the simulator does not have.
 
 .center.width-100[![](figures/toy-misspec.png)]
 
-Calibration is computed on simulations, and stays fine. Only checks against the data, here the residuals, see the problem.
+Both posteriors are .bold[confident and wrong]. Calibration cannot tell: it is measured on simulated spectra, which never have this band. The residuals can: 5 to 6σ at the band.
 
 .footnote[Detecting and handling misspecification: [Schmitt et al](https://arxiv.org/abs/2112.08866), 2023; [Ward et al](https://arxiv.org/abs/2210.06564), NeurIPS 2022.]
 
 ???
-
-Every result so far assumed that the simulator is right. Here it is not. I took the same observation, and added an absorption band at 1.52 microns, where ammonia absorbs in cool atmospheres. Our simulator has no ammonia.
 
 On the left, the posteriors for the gravity and the radius. NPE in red, MCMC in grey. They agree with each other, they are tight, and they both miss the truth, the star. The gravity is even pushed against the edge of the prior, a hint that something is off. MCMC is no safer: it is exact, but for the wrong model. And NPE is now fed a spectrum unlike its training data, so in general it extrapolates without warning. Here it happens to stay close to MCMC.
 

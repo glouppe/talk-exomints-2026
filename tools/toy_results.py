@@ -316,9 +316,28 @@ def misspec(i=1, j=5, n_ppc=200, d=".render/data/toy-misspec/"):
     ar.set_yticks([-6, -3, 0, 3])
     ar.set_ylabel(r"Resid. [$\sigma$]")
     ar.set_xlabel("Wavelength [μm]")
+    k = np.argsort(r)[:2]  # the two worst residuals, at the missing band
+    cx, cy = T.WL_OUT[k].mean(), r[k].mean()
+    from matplotlib.patches import Ellipse
+    ar.add_patch(Ellipse((cx, cy), 0.09, 4.2, fill=False, ec=NPE_COL, lw=2.2, clip_on=False))
     print("NPE median", np.median(a, 0).round(2), "MCMC median", np.median(m, 0).round(2))
     print("min residual", r.min().round(1), "at", T.WL_OUT[np.argmin(r)].round(3))
     fig.savefig("figures/toy-misspec.png", dpi=DPI)
+
+    # first build: the new observation alone, against the same planet without the band
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    ax = fig.add_axes([0.07, 0.14, 0.91, 0.74])
+    c, w = float(obs["center"]), float(obs["width"])
+    ax.axvspan(c - 2 * w, c + 2 * w, color="#e6e6e6", lw=0)
+    ax.text(c - 2 * w - 0.015, 7.6, "ammonia band\n(not in the simulator)", ha="right", va="top", color="#555")
+    ax.plot(T.WL_OUT, obs["f_clean"], "--", color="#999", lw=2, label="same planet, without the band")
+    ax.errorbar(T.WL_OUT, x, yerr=SIGMA, fmt="o", ms=5, color="#222", elinewidth=1, label=r"new observation $x$")
+    ax.set_xlim(0.95, 2.45)
+    ax.set_ylim(-0.6, 8.4)
+    ax.set_xlabel("Wavelength [μm]")
+    ax.set_ylabel(r"Flux [$10^{-16}$ W m$^{-2}$ μm$^{-1}$]")
+    ax.legend(frameon=False, loc="upper right")
+    fig.savefig("figures/toy-misspec-obs.png", dpi=DPI)
 
 
 # ------------------------------------------------------------------ observed spectrum
