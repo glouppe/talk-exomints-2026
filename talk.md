@@ -514,7 +514,7 @@ class: middle
 
 ## Calibration
 
-We check that the .bold[inference network] is calibrated, on $10^3$ simulated observations, in a minute.
+A posterior is .bold[calibrated] if its 90% credible regions contain the true parameters 90% of the time, and likewise at every level. We check the inference network on $10^3$ simulated observations.
 
 .center[
 <video poster="figures/toy-coverage.png" muted loop autoplay playsinline class="anim">
@@ -674,7 +674,7 @@ class: middle
 
 ## Beyond normalizing flows
 
-NPE requires only a conditional density estimator $q\_\phi(\theta | x)$. Discrete flows are one choice, and continuous flows, defined by a vector field, are another.
+NPE is agnostic to the choice of density estimator $q\_\phi(\theta | x)$.
 
 .grid[
 .kol-1-2[.center.width-100[![](figures/gebhard-dnf.png)]]
