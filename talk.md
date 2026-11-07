@@ -395,23 +395,23 @@ class: middle
 
 ## Neural posterior estimation
 
-Train a conditional density estimator $q\_\phi(\theta | x)$, typically a .bold[normalizing flow], to output the posterior of .bold[any] observation $x$:
+We train a conditional density estimator $q\_\phi(\theta | x)$, typically a .bold[normalizing flow], to approximate the posterior of .bold[any] observation $x$,
 $$\phi^\star = \arg\min\_\phi \; \mathbb{E}\_{p(\theta, x)} \left[ -\log q\_\phi(\theta | x) \right].$$
 
-The expectation is over pairs $(\theta, x)$ from the simulator: no likelihood is ever evaluated.
+The expectation runs over pairs $(\theta, x)$ from the simulator, so that the likelihood is never evaluated.
 
 Up to a constant, this loss is the expected divergence to the true posterior,
 $$\mathbb{E}\_{p(x)} \, \text{KL}\big( p(\theta|x) \, \Vert \, q\_\phi(\theta|x) \big).$$
 
-.success[With enough simulations and network capacity, the trained network is the posterior, for every observation.]
+.success[With enough simulations and network capacity, the trained network is the posterior of every observation.]
 
 ???
 
-The idea of neural posterior estimation is simple. We train a network that takes an observation $x$ and returns a probability distribution over the parameters $\theta$. Not a point estimate: a whole distribution. Typically, this network is a normalizing flow, which we will open up on the next slide.
+Neural posterior estimation trains a network that takes an observation $x$ and returns a probability distribution over the parameters $\theta$. The output is a whole distribution, not a point estimate. The network is typically a normalizing flow, which we open on the next slide.
 
-How do we train it? We draw pairs from the simulator: parameters, and the spectrum they produce. And we ask the network to give high probability to the true parameters, given the spectrum. That is the loss: the negative log-probability of $\theta$ under $q_\phi(\cdot | x)$.
+We draw pairs of parameters and spectra from the simulator, and we train the network to give high probability to the true parameters given the spectrum. The loss is the negative log-probability of $\theta$ under $q_\phi(\cdot | x)$.
 
-Why does this work? This loss is, up to a constant, the average KL divergence between the true posterior and the network. It is minimized when the network equals the posterior, for every observation. And we never needed to evaluate the likelihood: only to run the simulator.
+Up to a constant, this loss is the average KL divergence between the true posterior and the network. It is minimized when the network equals the posterior, for every observation. The likelihood is never evaluated; we only run the simulator.
 
 ---
 
@@ -442,7 +442,7 @@ class: middle
 
 ## Training
 
-Simulate pairs $(\theta\_i, x\_i)$ from the prior and the simulator, then minimize the loss over them. Noise is added on the fly.
+We simulate pairs $(\theta\_i, x\_i)$ from the prior and the simulator, and minimize the loss over them, with the noise added on the fly.
 
 .center[
 <video poster="figures/toy-training.png" muted loop autoplay playsinline class="anim">
@@ -452,11 +452,11 @@ Simulate pairs $(\theta\_i, x\_i)$ from the prior and the simulator, then minimi
 
 ???
 
-To train, we need data: pairs of parameters and spectra. We draw parameters from the prior, run the simulator, and keep the pair. Each line is one simulated planet, coloured by its internal temperature. Hot planets are bright, cool ones are faint, with deep methane bands. Here, half a million pairs, in half an hour on a laptop.
+Training requires pairs of parameters and spectra. We draw parameters from the prior and run the simulator. Each line is one simulated planet, coloured by its internal temperature. Hot planets are bright; cool ones are faint, with deep methane bands. We use half a million pairs, simulated in half an hour on a laptop.
 
-With a real code like petitRADTRANS, one spectrum takes seconds, and twelve million of them took about 17,000 CPU hours. That is the price, and it is paid once.
+With a real code such as petitRADTRANS, one spectrum takes seconds, and twelve million of them took about 17,000 CPU hours. This cost is paid once.
 
-Then we train: batches of pairs, gradient steps on the loss. The noise of the instrument is added on the fly, so each spectrum comes with a new noise realization at each epoch. The loss goes down on the training pairs, and on pairs held out for validation.
+We then minimize the loss by stochastic gradient descent over batches of pairs. The instrument noise is added on the fly, so that each spectrum receives a new noise realization at each epoch. The loss decreases on the training pairs and on pairs held out for validation.
 
 ---
 
@@ -514,7 +514,7 @@ class: middle
 
 ## Calibration
 
-Does the .bold[inference network] give calibrated posteriors? Check on $10^3$ simulated observations, in a minute.
+We check that the .bold[inference network] is calibrated, on $10^3$ simulated observations, in a minute.
 
 .center[
 <video poster="figures/toy-coverage.png" muted loop autoplay playsinline class="anim">
@@ -522,21 +522,21 @@ Does the .bold[inference network] give calibrated posteriors? Check on $10^3$ si
 </video>
 ]
 
-Coverage is necessary, not sufficient: the prior itself is calibrated. Stronger tests: TARP, MIRA, L-C2ST.
+Coverage is necessary but not sufficient, since the prior itself is calibrated. TARP, MIRA and L-C2ST are stronger tests.
 
 .footnote[TARP: [Lemos et al](https://arxiv.org/abs/2302.03026), ICML 2023. MIRA: [Sharief et al](https://arxiv.org/abs/2605.02014), ICML 2026. L-C2ST: [Linhart et al](https://arxiv.org/abs/2306.03580), NeurIPS 2023.]
 
 ???
 
-Two checks, which test two different things. This first one tests the inference network. Amortization makes it possible. Since posteriors are cheap, we can compute thousands of them, for simulated observations where we know the truth, and check that they are calibrated.
+We make two checks, which test two different things. The first tests the inference network, and amortization makes it possible. Posteriors are cheap, so we compute thousands of them for simulated observations whose true parameters we know, and we check that they are calibrated.
 
-On the left, test cases one by one. For each, the 90% credible interval of the C/O ratio, and the true value. If the posteriors are calibrated, the true value should fall inside 90% of the time. Green when inside, red when outside.
+On the left, the test cases one by one. For each, we show the 90% credible interval of the C/O ratio and the true value. If the posteriors are calibrated, the true value falls inside 90% of the time. Green marks a hit, red a miss.
 
-On the right, the same question for every credibility level: expected coverage. As cases accumulate, the curve settles on the diagonal: calibrated. Above the diagonal would be conservative, below overconfident.
+On the right, the same question for every credibility level, or expected coverage. As cases accumulate, the curve settles on the diagonal. A curve above the diagonal would indicate conservative posteriors, and below it overconfident ones.
 
-One caveat. Coverage is necessary, but not sufficient: the prior itself is perfectly calibrated, and useless. Stronger tests exist: TARP, which is necessary and sufficient for the posterior to be right, MIRA, or local tests such as L-C2ST, which was used for WISE 1738.
+Coverage is necessary but not sufficient, since the prior itself is perfectly calibrated and useless. Stronger tests exist. TARP is necessary and sufficient for the posterior to be correct; MIRA and local tests such as L-C2ST are others, and L-C2ST was used for WISE 1738.
 
-This took a minute. With MCMC or nested sampling, a thousand retrievals would take a week. That is why such checks are rarely done for retrievals today.
+This check took a minute. With MCMC or nested sampling, a thousand retrievals would take a week, which is why such checks are rarely done for retrievals today.
 
 ---
 
@@ -571,7 +571,7 @@ class: middle
 
 ## Posterior predictive check
 
-Does the .bold[forward model] explain the observation? Draw $\theta \sim q\_\phi(\theta | x\_{\rm obs})$, simulate, compare.
+To check the .bold[forward model], we draw $\theta \sim q\_\phi(\theta | x\_{\rm obs})$, simulate, and compare with the observation.
 
 .center[
 <video poster="figures/toy-ppc.png" muted loop autoplay playsinline class="anim">
@@ -581,7 +581,7 @@ Does the .bold[forward model] explain the observation? Draw $\theta \sim q\_\phi
 
 ???
 
-The second check tests something else: the forward model. Calibration only uses simulations, so it cannot tell us whether the simulator describes the real planet. The posterior predictive can, and you already know it from retrievals. We draw parameters from the posterior, run them through the simulator, the same one as before, and compare the spectra with the observation. Each draw leaves a trace. Together, they cover the data, within the noise.
+The second check tests the forward model. Calibration uses simulations only, so it cannot tell whether the simulator describes the real planet. The posterior predictive check can, and it is familiar from retrievals. We draw parameters from the posterior, run them through the same simulator, and compare the spectra with the observation. Each draw leaves a trace, and together the traces cover the data within the noise.
 
 ---
 
@@ -674,7 +674,7 @@ class: middle
 
 ## Beyond normalizing flows
 
-NPE only needs a conditional density estimator $q\_\phi(\theta | x)$. A chain of discrete transformations is one choice; a continuous flow, defined by a vector field and an ODE, is another.
+NPE requires only a conditional density estimator $q\_\phi(\theta | x)$. Discrete flows are one choice, and continuous flows, defined by a vector field, are another.
 
 .grid[
 .kol-1-2[.center.width-100[![](figures/gebhard-dnf.png)]]
@@ -689,7 +689,7 @@ NPE only needs a conditional density estimator $q\_\phi(\theta | x)$. A chain of
 
 ???
 
-The flow we used is one choice among others. NPE only needs a network that outputs a conditional density. On the left, what we did: a chain of discrete, invertible transformations. On the right, a continuous flow: a neural network defines a vector field, and samples move from the Gaussian to the posterior by integrating an ODE. Note that both also take the noise level as input: one network for any signal-to-noise. We come back to this.
+NPE requires only a network that outputs a conditional density, and the flow we used is one choice among others. On the left, our choice, a chain of discrete invertible transformations. On the right, a continuous flow, in which a network defines a vector field and samples move from the Gaussian to the posterior by integrating an ODE. Both networks also take the noise level as input, so that a single network serves any signal-to-noise ratio. We return to this point.
 
 ---
 
@@ -803,19 +803,19 @@ class: middle
 
 ## Model comparison
 
-Are there clouds? Compare two simulators, with and without a cloud deck. By eye, both fit.
+We compare two simulators, with and without a cloud deck. By eye, both fit.
 
 .center.width-100[![](figures/mc-ppc.png)]
 
 ???
 
-A question you ask all the time: are there clouds? Is this molecule detected? These are questions about models, not parameters. Here, two simulators: our toy with its cloud deck, six parameters, and the same without clouds, five parameters.
+The presence of clouds, or the detection of a molecule, are questions about models, not parameters. We consider two simulators, our toy with its cloud deck and six parameters, and the same toy without clouds and with five parameters.
 
-Two planets, and for each model its posterior predictive: spectra simulated from its posterior. On the left, a cloudy planet. By eye, both models fit. The residuals below show that the clear model misses a few bins by two or three sigma, in the windows where clouds dim the light. Summed over the spectrum, its best fit is worse by a chi-square of about 47: hard to see, decisive in the evidence, a log Bayes factor of 20.
+For two planets, we show the posterior predictive of each model, that is, spectra simulated from its posterior. On the left, a cloudy planet. By eye, both models fit. The residuals below show that the clear model misses a few bins by two or three sigma, in the windows where clouds dim the light. Summed over the spectrum, its best fit is worse by a chi-square of about 47. The difference is hard to see, yet decisive in the evidence, with a log Bayes factor of 20.
 
-On the right, a clear planet: both models fit equally well. The cloudy model can mimic a clear sky by putting its clouds deep. The small preference for the clear model, a log Bayes factor of about minus one, is the Occam penalty for the cloud parameter it does not need.
+On the right, a clear planet, which both models fit equally well. The cloudy model mimics a clear sky by placing its clouds deep. The small preference for the clear model, a log Bayes factor of about minus one, is the Occam penalty for the cloud parameter it does not need.
 
-So: a posterior predictive check tells us each model can fit. The evidence tells us which one explains the data better.
+A posterior predictive check tells us that each model can fit. The evidence tells us which one explains the data better.
 
 ---
 
@@ -823,7 +823,7 @@ class: middle
 
 <img src="figures/mc-bayes.png" style="display: block; margin: 0 auto; width: 46%;">
 
-The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ compares the evidence of the two models. Three ways to estimate it:
+The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ compares the evidence of the two models.
 
 <div class="evidence-rows">
 <div><span>Nested sampling</span>$$p(x|M) \approx \sum_i p(x|\theta_i, M) \, \Delta X_i$$</div>
@@ -836,15 +836,15 @@ The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ com
 
 ???
 
-The Bayes factor compares the evidences of the two models: how probable the observation is under each model, averaged over its prior. How do we get the evidence? Three ways, on the same two planets.
+The Bayes factor compares the evidences of the two models, that is, the probability of the observation under each model, averaged over its prior. We estimate the evidence in three ways, on the same two planets.
 
-Nested sampling, the reference: from fifty thousand to a million likelihood calls, here, for each spectrum and each model.
+Nested sampling is the reference. It required from fifty thousand to a million likelihood calls for each spectrum and each model.
 
-Importance sampling with the network of each model: the same answer. The mean weight is the evidence. The network only needs to be a good proposal.
+Importance sampling with the network of each model gives the same answer. The mean weight is the evidence, and the network only needs to be a good proposal.
 
-And without any likelihood: train a classifier to tell, from a spectrum, which model simulated it. Its output is the posterior probability of each model, and its log-odds are the Bayes factor. On the clear planet it agrees. On the cloudy planet it says decisive, but it cannot say how decisive: a classifier cannot resolve probabilities of one in a billion. That is fine for a decision, not for a precise number.
+A classifier requires no likelihood at all. We train it to tell which model simulated a given spectrum. Its output is the posterior probability of each model, and its log-odds are the Bayes factor. On the clear planet it agrees with the other two. On the cloudy planet it detects decisive evidence but saturates, since a classifier cannot resolve probabilities of one in a billion. The answer suffices for a decision, not for a precise value.
 
-The cloudy planet: overwhelming evidence for clouds. The clear planet: a mild preference for the simpler model.
+The cloudy planet shows overwhelming evidence for clouds, and the clear planet a mild preference for the simpler model.
 
 ---
 
