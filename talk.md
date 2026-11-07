@@ -698,24 +698,26 @@ class: middle
 ## Flow matching posterior estimation (FMPE)
 
 .center[
-<video poster="figures/fm-flow.png?v=2" muted loop autoplay playsinline class="anim" style="width: 50%;">
+<video poster="figures/fm-flow.png?v=2" muted loop autoplay playsinline class="anim" style="width: 44%;">
 <source src="figures/videos/fm-flow.mp4?v=2" type="video/mp4">
 </video>
 ]
 
-Train the vector field $v\_\phi$ by regression, along straight paths $\theta\_t = (1-t)\, \theta\_0 + t\, \theta$ from noise $\theta\_0 \sim \mathcal{N}(0, I)$ to $\theta$:
-$$\min\_\phi \; \mathbb{E}\_{t \sim \mathcal{U}(0,1),\; \theta\_0 \sim \mathcal{N}(0, I),\; (\theta, x) \sim p(\theta, x)} \left[ \left\Vert v\_\phi(\theta\_t, t; x) - (\theta - \theta\_0) \right\Vert^2 \right].$$
-
-Sampling integrates $\dot{\theta}\_t = v\_\phi(\theta\_t, t; x)$ from $t = 0$ to $1$. The density is exact, by the continuous change of variables:
+Noise $\theta\_0 \sim \mathcal{N}(0, I)$ flows along a vector field $v\_\phi(\theta\_t, t; x)$, from $t = 0$ to $1$. The density is exact, by the continuous change of variables:
 $$\log q\_\phi(\theta | x) = \log \mathcal{N}(\theta\_0; 0, I) - \int\_0^1 \nabla \cdot v\_\phi(\theta\_t, t; x) \, dt.$$
+
+Train the vector field by regression, along straight paths $\theta\_t = (1-t)\, \theta\_0 + t\, \theta$:
+$$\min\_\phi \; \mathbb{E}\_{t \sim \mathcal{U}(0,1),\; \theta\_0 \sim \mathcal{N}(0, I),\; (\theta, x) \sim p(\theta, x)} \left[ \left\Vert v\_\phi(\theta\_t, t; x) - (\theta - \theta\_0) \right\Vert^2 \right].$$
 
 .footnote[[Dax et al](https://arxiv.org/abs/2305.17161), NeurIPS 2023. Animation: the exact flow-matching vector field towards a two-mode target.]
 
 ???
 
-The animation shows a continuous flow: the samples move along a vector field that changes smoothly with time, from noise to a posterior with two modes. How is the vector field trained? By flow matching. Take a sample of noise, and a pair of parameters and spectrum from the simulator. Draw the straight line between the noise and the parameters. At a random time along the line, the network should point along the line. It is a simple regression: no invertibility constraint on the network, which makes it more flexible and easier to scale.
+The animation shows a continuous flow: the samples move along a vector field that changes smoothly with time, from noise to a posterior with two modes. To sample, we start from noise and follow the vector field, by solving an ODE.
 
-To sample, we start from noise and follow the vector field, by solving an ODE. And the density can still be computed exactly, which matters for what comes next. Compare with the discrete flow: there, the Gaussian density was corrected by the log-determinant of the Jacobian of each transformation. Here, the same idea in the limit of infinitely many infinitesimal steps: the sum becomes an integral, and the log-determinant becomes the divergence of the vector field, the trace of its Jacobian, along the path.
+The density can still be computed exactly, which matters for what comes next. Compare with the discrete flow: there, the Gaussian density was corrected by the log-determinant of the Jacobian of each transformation. Here, the same idea in the limit of infinitely many infinitesimal steps: the sum becomes an integral, and the log-determinant becomes the divergence of the vector field, the trace of its Jacobian, along the path.
+
+How is the vector field trained? By flow matching. Take a sample of noise, and a pair of parameters and spectrum from the simulator. Draw the straight line between the noise and the parameters. At a random time along the line, the network should point along the line. It is a simple regression: no invertibility constraint on the network, which makes it more flexible and easier to scale.
 
 ---
 
