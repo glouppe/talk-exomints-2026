@@ -18,7 +18,7 @@ background-size: cover
 
 Thank you for having us.
 
-One idea: if you can simulate a spectrum, you can infer the parameters that produced it. You do not need the likelihood.
+One idea for this tutorial: if you can simulate a spectrum, you can infer the parameters that produced it, without the likelihood.
 
 ---
 
@@ -361,7 +361,7 @@ Estimating $p(\theta | x)$: classical methods in blue, simulation-based inferenc
 
 ???
 
-Today, we focus on two of them: neural posterior estimation, NPE, and its flow-matching variant, FMPE. It is the simplest, and the one used in most exoplanet retrievals with SBI so far.
+Today, we focus on two of them: neural posterior estimation, NPE, and its flow-matching variant, FMPE. NPE is the simplest, and the one used in most exoplanet retrievals with SBI so far.
 
 ---
 
@@ -477,9 +477,9 @@ class: middle
 
 ???
 
-Now the observed spectrum. In red, the posterior from NPE. In grey, the posterior from MCMC, which, in this toy problem, can use the exact likelihood. They agree, and both contain the true parameters, in blue.
+In red, the posterior from NPE. In grey, MCMC, and in orange, nested sampling: in this toy problem, both can use the exact likelihood. The three agree, and contain the true parameters, in blue.
 
-NPE took about a second. MCMC took about nine minutes. With a real radiative transfer code, MCMC or nested sampling take days, and NPE still takes a second.
+NPE took two seconds. MCMC took nine minutes, nested sampling about an hour. With a real radiative transfer code, they take days, and NPE still takes seconds.
 
 ---
 
@@ -509,7 +509,7 @@ On the right, the same question for every credibility level: expected coverage. 
 
 One caveat. Coverage is necessary, but not sufficient: the prior itself is perfectly calibrated, and useless. Stronger tests exist: TARP, which is necessary and sufficient for the posterior to be right, MIRA, or local tests such as L-C2ST, which was used for WISE 1738.
 
-This took a minute. With MCMC or nested sampling, a thousand retrievals would take a week. That is why such checks are rarely done for retrievals today. We will come back to diagnostics, and to what they do not tell us.
+This took a minute. With MCMC or nested sampling, a thousand retrievals would take a week. That is why such checks are rarely done for retrievals today.
 
 ---
 
@@ -554,7 +554,7 @@ Does the .bold[forward model] explain the observation? Draw $\theta \sim q\_\phi
 
 ???
 
-The second check tests something else: the forward model. Calibration only uses simulations, so it cannot tell us whether the simulator describes the real planet. The posterior predictive can, and you already know it from retrievals. We draw parameters from the posterior, run them through the simulator, the same one as before, and compare the spectra with the observation. Each draw leaves a trace. Together, they cover the data, within the noise. We will come back to diagnostics later.
+The second check tests something else: the forward model. Calibration only uses simulations, so it cannot tell us whether the simulator describes the real planet. The posterior predictive can, and you already know it from retrievals. We draw parameters from the posterior, run them through the simulator, the same one as before, and compare the spectra with the observation. Each draw leaves a trace. Together, they cover the data, within the noise.
 
 ---
 
@@ -582,9 +582,9 @@ Everything we did on the toy problem was first shown to work with a realistic re
 
 The simulator is petitRADTRANS, with clouds, scattering and disequilibrium chemistry: sixteen parameters, as in the retrieval of HR 8799 e by Mollière and colleagues. Twelve million simulations, about seventeen thousand CPU hours, done once on a cluster. A flow, with an embedding network for the spectrum.
 
-On the benchmark spectrum, NPE in blue agrees with MultiNest in orange. NPE takes seconds. And because it is amortized, the posteriors can be checked: next slide.
+On the left, for the benchmark spectrum, NPE in blue agrees with MultiNest in orange. NPE takes seconds.
 
-And the same checks as for the toy. On the left, the posterior predictive: spectra simulated from the posterior reproduce the observation, with residuals within the noise. On the right, expected coverage over many simulated spectra: on the diagonal, the posteriors are calibrated. Only possible because the posteriors are cheap.
+On the right, the same two checks as for the toy. At the top, the posterior predictive: spectra simulated from the posterior reproduce the observation, with residuals within the noise. At the bottom, expected coverage over many simulated spectra: on the diagonal, the posteriors are calibrated.
 
 ---
 
@@ -682,7 +682,7 @@ First, the network takes the noise level as input. One network covers any signal
 
 Second, importance sampling. Because the density of the network is exact, and the likelihood can be evaluated on this benchmark, samples from the network can be reweighted to correct its errors. The efficiency of the reweighting tells us when the network is wrong. And as a bonus, it gives the Bayesian evidence, which we need for model comparison.
 
-The corner plot: FMPE and NPE, with and without importance sampling, against two nested samplers. They agree.
+On the left, FMPE and NPE, with and without importance sampling, against two nested samplers. They agree. On the right, the efficiency of importance sampling for many spectra, FMPE against NPE: FMPE is usually the better proposal.
 
 ---
 
@@ -770,7 +770,7 @@ $$\log B \approx \log \frac{d_\psi(x)}{1 - d_\psi(x)}$$
 
 The Bayes factor compares the evidences of the two models: how probable the observation is under each model, averaged over its prior. How do we get the evidence? Three ways, on the same two planets.
 
-Nested sampling, the reference: tens of thousands of likelihood calls, for each spectrum and each model.
+Nested sampling, the reference: from fifty thousand to a million likelihood calls, here, for each spectrum and each model.
 
 Importance sampling with the network of each model: the same answer. The mean weight is the evidence. The network only needs to be a good proposal.
 
@@ -829,7 +829,7 @@ Simulation-based inference for exoplanets
 
 ???
 
-If you want to go further. Our review with Max is the most direct follow-up to this tutorial. The PNAS paper is a short overview of the field. The practical guide covers the workflow in detail, and the tutorial review covers diffusion and flow-matching estimators. And the two exoplanet papers we showed.
+If you want to go further. Our review with Max is the most direct follow-up to this tutorial. The PNAS paper is a short overview of the field. The practical guide covers the workflow in detail, and the tutorial review covers diffusion and flow-matching estimators. And the three exoplanet papers we showed.
 
 ---
 

@@ -88,7 +88,7 @@ This file is the state of the project. Read it first at the start of every sessi
 - [x] **K4.** Do not copy: videos, `steer/`, Kolmogorov GIFs (unless the teaser keeps them, O1), `title-bg.gif`, `pdf/`, `tools/`, `todo.md`, `feedback.md`. Exception: `title-bg.gif`, `x.png` and `videos/teaser-x.mp4` copied, since the teaser is kept until O1 is decided.
 - [x] **K5.** `git init`, `.gitignore` for `.render/` outputs and `chrome-cdp/`. GitHub remote `glouppe/talk-exomints-2026` once agreed. Done: repo initialized, files staged, no commit, no remote.
 - [x] **K7.** Title slide finished. Background: see Q8. Max: photo from his ELLIS Institute Tübingen profile (`figures/faces/maxdax.jpg`), email maximilian.dax@tuebingen.mpg.de (from Gilles). Logos: ELLIS Institute Tübingen (`figures/logo-ellis-white.png`, black parts recoloured white from the site logo) next to ULiège. `style.css`: subtitle on the title slide now smaller and lighter; date kept on one line. Title per D12. Logo heights rebalanced (ELLIS 1em, ULiège 1.5em) after Gilles found ULiège too big. Ask Max whether he prefers another photo or the MPI-IS logo too.
-- [ ] **K8.** First commit and GitHub remote: on Gilles' go.
+- [x] **K8.** First commit and push to git@github.com:glouppe/talk-exomints-2026.git (branch master, 2026-11-07).
 
 ### Opening
 
@@ -151,12 +151,13 @@ Nothing ready in previous decks. Placeholder slide 34 "Model comparison" holds t
 
 ### Finish
 
-- [ ] **E1.** Speaker notes: simple sentences, clear story, no workshop-specific references.
-- [ ] **E2.** Screenshot pass with `.render/shot.py`; check timing (D2, D3). Also check each figure's on-screen font size (font rule above, `.render/measure.py`).
-- [ ] **E3.** PDF export.
+- [x] **E1.** Done 2026-11-07: all notes reread; stale or wrong statements fixed (merged-slide layouts, removed forward references, nested-sampling costs, three exoplanet papers, NPE/FMPE wording). Was: Speaker notes: simple sentences, clear story, no workshop-specific references.
+- [x] **E2.** Done 2026-11-07: all 39 slides rendered (no overflow or overlap); every generated figure measured at 14–18 px on screen; notes ≈ 3,200 words ≈ 21–25 min spoken, ≈ 30–35 min with animations, within 45 min. The NPE-vs-MCMC corner (slide 23) was still from the small model: regenerated with the final model and nested sampling (57 min). Was: Screenshot pass with `.render/shot.py`; check timing (D2, D3). Also check each figure's on-screen font size (font rule above, `.render/measure.py`).
+- [x] **E3.** Done: `talk-exomints-2026.pdf` (39 pages, 2560×1918, videos replaced by their poster, i.e. mostly the final frame), made by `.render/pdf.py` with `python3 -m http.server 8765` serving the folder and `~/anaconda3/bin/python`.
 
 ## Done
 
+- [x] 2026-11-07. E1–E3 done (notes pass, screenshot and font pass, PDF). Slide 23 corner regenerated with the final model and nested sampling. Pushed to GitHub.
 - [x] 2026-11-07. Slide 30 animated (`tools/fm_anim.py`, `videos/fm-flow.mp4`, loops): Gaussian samples moved by the exact flow-matching vector field (straight paths) into a crescent + second mode, grey arrows show the field at each t, time bar; replaces the Gebhard et al vector-field strip.
 - [x] 2026-11-07. Take-homes rewritten in plain declarative sentences (louppe-prose); reading list split into Reviews / SBI for exoplanets (+ Vasist et al 2025); closing slide without the equation (background + "The end.").
 - [x] 2026-11-07. Take-home slide (36) rebuilt as a closing punch: four short lines ("If you can simulate it, you can infer it." / "Train once, then every spectrum in seconds." / "Check the network. Check the model." / "Better overdispersed than overconfident."), large light white type over the darkened HR 8799 time-lapse; the details moved to the notes.
