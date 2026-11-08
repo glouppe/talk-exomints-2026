@@ -434,11 +434,17 @@ class: middle
 
 The embedding network compresses the spectrum into a few features $h(x)$, which condition the flow. Its architecture is a .bold[choice], adapted to the data. For our 94 bins, we use a multilayer perceptron, a stack of layers $z\_{l+1} = \sigma(W\_l\, z\_l + b\_l)$.
 
-.center.width-100[![](figures/toy-embedding-arch.png)]
+.center[
+<video poster="figures/toy-embedding-arch.png?v=2" muted loop autoplay playsinline class="anim" style="width: 100%;">
+<source src="figures/videos/toy-embedding.mp4" type="video/mp4">
+</video>
+]
 
 Convolutional networks or transformers suit longer spectra, irregular grids or several instruments. In all cases, the embedding is trained jointly with the flow, by the same loss.
 
 ???
+
+The animation passes six spectra through the trained network. The colours show the actual values of a few units, relative to their average over these spectra, and the 64 features change with each spectrum.
 
 The embedding network is a choice, like the prior or the flow. Here, the spectrum has 94 bins on a fixed grid, so a multilayer perceptron suffices. Each layer multiplies its input by a matrix, adds a vector, and applies a simple nonlinear function, here the ELU. Four such layers take the 94 bins to 512, 256, 256 and finally 64 features, which condition the flow. We did not compare it with other architectures on this toy; the posterior already matches MCMC.
 

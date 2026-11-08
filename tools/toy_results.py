@@ -255,6 +255,100 @@ def embedding_arch(sizes=(94, 512, 256, 256, 64), shown=(7, 10, 8, 8, 6)):
     fig.savefig("figures/toy-embedding-arch.png", dpi=DPI)
 
 
+def embedding_anim(n_spectra=6, sizes=(94, 512, 256, 256, 64), shown=(7, 10, 8, 8, 6), FPS=24, seed=11):
+    """Animation: several spectra go through the embedding network in turn. For each, the layers light up one after
+    the other with the actual activations of a few units (z-scored per unit across the spectra shown), and the 64
+    output features h(x) update. Outputs videos/toy-embedding.mp4 and the poster figures/toy-embedding-arch.png."""
+    model = load_model()
+    sim = T.Simulator(noisy=True, seed=seed)
+    X = [np.load(OUT + "posterior.npz")["x_obs"]]
+    for t in sim.sample_prior(20 * n_spectra):
+        if len(X) == n_spectra:
+            break
+        if 0.3 < sim.clean(t).mean() < 8:
+            X.append(sim(t))
+    X = np.array(X)
+    # activations: preprocessed input, then the output of each ELU, then h(x)
+    acts = [N.preprocess(torch.tensor(X, dtype=torch.float32))]
+    with torch.no_grad():
+        z = acts[0]
+        for layer in model.embed:
+            z = layer(z)
+            if isinstance(layer, torch.nn.ELU):
+                acts.append(z)
+        acts.append(z)
+    acts = [a.numpy() for a in acts]
+    assert [a.shape[1] for a in acts] == list(sizes)
+    # units shown: evenly spaced input bins; for the other layers, the units that vary most across spectra
+    idx = [np.linspace(0, sizes[0] - 1, shown[0]).astype(int)]
+    idx += [np.sort(np.argsort(a.std(0))[::-1][:k]) for a, k in zip(acts[1:], shown[1:])]
+    zs = [(a - a.mean(0)) / (a.std(0) + 1e-6) for a in acts]
+    cmap = plt.cm.RdBu_r
+
+    W, H, DPI = 1600, 640, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    a0 = fig.add_axes([0.02, 0.30, 0.22, 0.45])
+    an = fig.add_axes([0.28, 0.08, 0.50, 0.84])
+    a1 = fig.add_axes([0.82, 0.12, 0.05, 0.76])
+    fig.text(0.885, 0.5, r"$h(x)$" + "\n64 features", ha="left", va="center", fontsize=20)
+    for x0, x1 in [(0.245, 0.30), (0.765, 0.81)]:
+        fig.add_artist(plt.matplotlib.patches.FancyArrowPatch((x0, 0.5), (x1, 0.5), transform=fig.transFigure,
+                                                             arrowstyle="-|>", mutation_scale=22, lw=2, color="#555"))
+    cols = [np.linspace(-0.42, 0.42, k) * (0.55 + 0.45 * k / max(shown)) for k in shown]
+
+    def draw(i, lit):
+        """Spectrum i; layers 0..lit-1 show their activations, the rest are blank. lit = len(sizes) + 1 shows h."""
+        a0.cla()
+        a0.plot(T.WL_OUT, X[i], "o", ms=3, color="#222")
+        a0.set_xticks([])
+        a0.set_yticks([])
+        a0.set_title(r"Spectrum $x$ (94 bins)", fontsize=20)
+        an.cla()
+        an.axis("off")
+        an.set_xlim(-0.5, len(sizes) - 0.5)
+        an.set_ylim(-0.75, 0.5)
+        for c in range(len(cols) - 1):
+            col = "#999999" if c + 1 < lit else "#dddddd"
+            for y0 in cols[c]:
+                for y1 in cols[c + 1]:
+                    an.plot([c, c + 1], [y0, y1], color=col, lw=0.6, zorder=1)
+        for c, ys in enumerate(cols):
+            face = cmap(0.5 + 0.25 * np.clip(zs[c][i, idx[c]], -2, 2)) if c < lit else "white"
+            an.scatter(np.full(len(ys), c), ys, s=180, c=face if c < lit else "white", edgecolor="#555", lw=1.5,
+                       zorder=2)
+            an.text(c, -0.62, str(sizes[c]), ha="center", va="center", color="#555")
+        a1.cla()
+        if lit > len(sizes):
+            a1.imshow(zs[-1][i][:, None], aspect="auto", cmap=cmap, vmin=-2, vmax=2)
+        else:
+            a1.imshow(np.zeros((sizes[-1], 1)), aspect="auto", cmap="Greys", vmin=0, vmax=1)
+        a1.set_xticks([])
+        a1.set_yticks([])
+        for sp in a1.spines.values():
+            sp.set_visible(False)
+
+    out = encode("figures/videos/toy-embedding.mp4", W, H, FPS)
+
+    def emit(k):
+        fig.canvas.draw()
+        buf = np.asarray(fig.canvas.buffer_rgba()).tobytes()
+        for _ in range(k):
+            out.stdin.write(buf)
+
+    for i in range(len(X)):
+        draw(i, 0)
+        emit(int(0.4 * FPS))
+        for lit in range(1, len(sizes) + 2):
+            draw(i, lit)
+            emit(int(0.18 * FPS))
+        emit(int(1.2 * FPS))
+        if i == 0:
+            fig.savefig("figures/toy-embedding-arch.png", dpi=DPI)
+    out.stdin.close()
+    out.wait()
+
+
 def embedding(params=(0, 3, 4, 5)):
     """Figure: an observed spectrum with its molecular bands, and below, for a few parameters, the sensitivity of
     the posterior mean to each wavelength bin (min-max normalized per parameter)."""
@@ -835,4 +929,4 @@ def is_anim(n=3000, i=0, j=3, FPS=24, seed=4):
 
 
 if __name__ == "__main__":
-    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "embedding": embedding, "embedding_arch": embedding_arch, "saliency": saliency, "misspec": misspec, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
+    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "embedding": embedding, "embedding_arch": embedding_arch, "embedding_anim": embedding_anim, "saliency": saliency, "misspec": misspec, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
