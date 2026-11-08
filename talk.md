@@ -432,19 +432,19 @@ class: middle
 
 ## Embedding network
 
-The embedding network is a stack of layers $z\_{l+1} = \sigma(W\_l\, z\_l + b\_l)$, each a linear map followed by a simple nonlinearity $\sigma$. It compresses the 94 bins of the spectrum into 64 features $h(x)$, which condition the flow.
+The embedding network compresses the spectrum into a few features $h(x)$, which condition the flow. Its architecture is a .bold[choice], adapted to the data. For our 94 bins, we use a multilayer perceptron, a stack of layers $z\_{l+1} = \sigma(W\_l\, z\_l + b\_l)$.
 
 .center.width-100[![](figures/toy-embedding-arch.png)]
 
-The weights are trained jointly with the flow, by the same loss. The network learns which wavelengths inform each parameter.
+Convolutional networks or transformers suit longer spectra, irregular grids or several instruments. In all cases, the embedding is trained jointly with the flow, by the same loss.
 
 ???
 
-The embedding network is a function with many adjustable weights. Each layer multiplies its input by a matrix, adds a vector, and applies a simple nonlinear function, here the ELU. Four such layers take the 94 bins to 512, 256, 256 and finally 64 numbers. These 64 numbers, the features, condition the flow.
+The embedding network is a choice, like the prior or the flow. Here, the spectrum has 94 bins on a fixed grid, so a multilayer perceptron suffices. Each layer multiplies its input by a matrix, adds a vector, and applies a simple nonlinear function, here the ELU. Four such layers take the 94 bins to 512, 256, 256 and finally 64 features, which condition the flow. We did not compare it with other architectures on this toy; the posterior already matches MCMC.
 
 The weights are not set by hand. The same loss trains the embedding and the flow together, so the features are those that best inform the posterior. They replace hand-crafted summary statistics. On our toy, the trained network reads the C/O ratio from the CO and CH4 bands, the cloud top from the windows, and the radius from the continuum peaks. Nobody told it where the molecules absorb.
 
-The architecture follows the data. Binned spectra suit dense layers like these. Long or multi-instrument spectra suit convolutions or transformers.
+Other data call for other choices. Convolutional networks share filters along wavelength and scale to thousands of bins. Transformers take each bin or segment with its wavelength and error bar, which suits irregular grids and combined instruments, as for WISE 1738. Residual connections help when the network is deep.
 
 ---
 
