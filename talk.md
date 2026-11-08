@@ -430,6 +430,26 @@ Below the flow, samples for our observed spectrum become, layer by layer, a roun
 
 class: middle
 
+## Embedding network
+
+The embedding network is a stack of layers $z\_{l+1} = \sigma(W\_l\, z\_l + b\_l)$, each a linear map followed by a simple nonlinearity $\sigma$. It compresses the 94 bins of the spectrum into 64 features $h(x)$, which condition the flow.
+
+.center.width-100[![](figures/toy-embedding-arch.png)]
+
+The weights are trained jointly with the flow, by the same loss. The network learns which wavelengths inform each parameter.
+
+???
+
+The embedding network is a function with many adjustable weights. Each layer multiplies its input by a matrix, adds a vector, and applies a simple nonlinear function, here the ELU. Four such layers take the 94 bins to 512, 256, 256 and finally 64 numbers. These 64 numbers, the features, condition the flow.
+
+The weights are not set by hand. The same loss trains the embedding and the flow together, so the features are those that best inform the posterior. They replace hand-crafted summary statistics. On our toy, the trained network reads the C/O ratio from the CO and CH4 bands, the cloud top from the windows, and the radius from the continuum peaks. Nobody told it where the molecules absorb.
+
+The architecture follows the data. Binned spectra suit dense layers like these. Long or multi-instrument spectra suit convolutions or transformers.
+
+---
+
+class: middle
+
 ## Training
 
 We simulate $N$ pairs $(\theta\_i, x\_i) \sim p(\theta, x)$ and minimize the empirical estimate of the loss,

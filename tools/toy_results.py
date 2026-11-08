@@ -4,6 +4,7 @@
     python tools/toy_results.py loss       # training curve -> figures/toy-loss.png
     python tools/toy_results.py corner     # NPE vs MCMC on the benchmark -> figures/toy-corner.png
     python tools/toy_results.py ppc        # posterior predictive check -> figures/toy-ppc.png
+    python tools/toy_results.py embedding  # where the embedding looks: saliency per parameter -> figures/toy-embedding.png
     python tools/toy_results.py prior_pc   # animation: prior predictive check -> videos/toy-prior-pc.mp4
     python tools/toy_results.py misspec    # misspecified observation: posteriors + PPC -> figures/toy-misspec.png
     python tools/toy_results.py amortize   # animation: new spectra, instant posteriors -> videos/toy-amortize.mp4
@@ -182,6 +183,113 @@ def ppc(n=200):
     ax.legend(frameon=False, loc="upper right")
     fig.tight_layout()
     fig.savefig("figures/toy-ppc.png")
+
+
+# ------------------------------------------------------------------ embedding network
+
+def saliency(n_spectra=150, n_samples=256, seed=5):
+    """Where the network looks: |d E[theta_k | x] / d x_j|, in posterior standard deviations per noise sigma,
+    averaged over simulated spectra. Saved to OUT/saliency.npy (6, n_bins)."""
+    model = load_model()
+    sim = T.Simulator(noisy=True, seed=seed)
+    X = []
+    for t in sim.sample_prior(4 * n_spectra):
+        if 0.3 < sim.clean(t).mean() < 8:
+            X.append(sim(t))
+    torch.manual_seed(0)
+    G = []
+    for x in X[:n_spectra]:
+        xt = torch.tensor(x, dtype=torch.float32, requires_grad=True)
+        u = model.flow(model.embed(N.preprocess(xt))).rsample((n_samples,))
+        sd, mean = u.std(0).detach(), u.mean(0)
+        G.append([(torch.autograd.grad(mean[k], xt, retain_graph=True)[0] * SIGMA / sd[k]).abs().numpy()
+                  for k in range(len(T.LOWER))])
+    G = np.mean(G, axis=0)
+    np.save(OUT + "saliency.npy", G)
+    return G
+
+
+def embedding_arch(sizes=(94, 512, 256, 256, 64), shown=(7, 10, 8, 8, 6)):
+    """Figure: the embedding network on the observed spectrum. Input bins, dense layers drawn as columns of units
+    with their sizes, and the 64 output features h(x_obs) as a colour strip."""
+    model = load_model()
+    x = np.load(OUT + "posterior.npz")["x_obs"]
+    with torch.no_grad():
+        h = model.embed(N.preprocess(torch.tensor(x, dtype=torch.float32))).numpy()
+    W, H, DPI = 1600, 640, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    # input spectrum
+    a0 = fig.add_axes([0.02, 0.30, 0.22, 0.45])
+    a0.plot(T.WL_OUT, x, "o", ms=3, color="#222")
+    a0.set_xticks([])
+    a0.set_yticks([])
+    a0.set_title(r"Spectrum $x$ (94 bins)", fontsize=20)
+    # network
+    an = fig.add_axes([0.28, 0.08, 0.50, 0.84])
+    an.axis("off")
+    an.set_xlim(-0.5, len(sizes) - 0.5)
+    an.set_ylim(-0.75, 0.5)
+    cols = []
+    for c, (n_units, n_show) in enumerate(zip(sizes, shown)):
+        ys = np.linspace(-0.42, 0.42, n_show) * (0.55 + 0.45 * n_show / max(shown))
+        cols.append(ys)
+        an.text(c, -0.62, str(n_units), ha="center", va="center", color="#555")
+    for c in range(len(cols) - 1):
+        for y0 in cols[c]:
+            for y1 in cols[c + 1]:
+                an.plot([c, c + 1], [y0, y1], color="#cccccc", lw=0.6, zorder=1)
+    for c, ys in enumerate(cols):
+        an.scatter(np.full(len(ys), c), ys, s=180, color="white", edgecolor="#555", lw=1.5, zorder=2)
+    # output features
+    a1 = fig.add_axes([0.82, 0.12, 0.05, 0.76])
+    a1.imshow(h[:, None], aspect="auto", cmap="RdBu_r", vmin=-np.abs(h).max(), vmax=np.abs(h).max())
+    a1.set_xticks([])
+    a1.set_yticks([])
+    fig.text(0.885, 0.5, r"$h(x)$" + "\n64 features", ha="left", va="center", fontsize=20)
+    for x0, x1 in [(0.245, 0.30), (0.765, 0.81)]:
+        fig.add_artist(plt.matplotlib.patches.FancyArrowPatch((x0, 0.5), (x1, 0.5), transform=fig.transFigure,
+                                                             arrowstyle="-|>", mutation_scale=22, lw=2, color="#555"))
+    for sp in a1.spines.values():
+        sp.set_visible(False)
+    fig.savefig("figures/toy-embedding-arch.png", dpi=DPI)
+
+
+def embedding(params=(0, 3, 4, 5)):
+    """Figure: an observed spectrum with its molecular bands, and below, for a few parameters, the sensitivity of
+    the posterior mean to each wavelength bin (min-max normalized per parameter)."""
+    G = np.load(OUT + "saliency.npy") if os.path.exists(OUT + "saliency.npy") else saliency()
+    x = np.load(OUT + "posterior.npz")["x_obs"]
+    W, H, DPI = 1600, 800, 100
+    plt.rcParams["font.size"] = 20
+    fig = plt.figure(figsize=(W / DPI, H / DPI), dpi=DPI, facecolor="white")
+    n = len(params)
+    top = fig.add_axes([0.16, 0.62, 0.81, 0.33])
+    rows = [fig.add_axes([0.16, 0.12 + (n - 1 - k) * 0.48 / n, 0.81, 0.48 / n * 0.85], sharex=top) for k in range(n)]
+    bands = [(1.39, "H$_2$O"), (1.88, "H$_2$O"), (1.67, "CH$_4$"), (2.32, "CH$_4$ + CO"), (1.58, "CO")]
+    for c, lab in bands:
+        for ax in [top] + rows:
+            ax.axvline(c, color="#cccccc", lw=1.5, zorder=0)
+        top.text(c, 1.02, lab, transform=top.get_xaxis_transform(), ha="center", va="bottom", fontsize=17,
+                 color="#777")
+    top.errorbar(T.WL_OUT, x, yerr=SIGMA, fmt="o", ms=4, color="#222", elinewidth=1)
+    top.set_ylabel("Flux")
+    top.set_yticks([])
+    plt.setp(top.get_xticklabels(), visible=False)
+    names = {0: r"$T_{\rm int}$", 1: r"$\log g$", 2: r"[M/H]", 3: "C/O", 4: "cloud top", 5: "radius"}
+    for ax, k in zip(rows, params):
+        g = (G[k] - G[k].min()) / (G[k].max() - G[k].min())
+        ax.fill_between(T.WL_OUT, 0, g, color=NPE_COL, alpha=0.35, lw=0, step="mid")
+        ax.plot(T.WL_OUT, g, color=NPE_COL, lw=1.6, drawstyle="steps-mid")
+        ax.set_ylim(0, 1.05)
+        ax.set_yticks([])
+        ax.spines["left"].set_visible(False)
+        ax.text(-0.01, 0.35, names[k], transform=ax.transAxes, ha="right", va="center")
+        if ax is not rows[-1]:
+            plt.setp(ax.get_xticklabels(), visible=False)
+    rows[-1].set_xlabel("Wavelength [μm]")
+    rows[-1].set_xlim(0.95, 2.45)
+    fig.savefig("figures/toy-embedding.png", dpi=DPI)
 
 
 # ------------------------------------------------------------------ prior predictive check
@@ -727,4 +835,4 @@ def is_anim(n=3000, i=0, j=3, FPS=24, seed=4):
 
 
 if __name__ == "__main__":
-    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "misspec": misspec, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
+    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "embedding": embedding, "embedding_arch": embedding_arch, "saliency": saliency, "misspec": misspec, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
