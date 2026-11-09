@@ -18,9 +18,9 @@ background-size: cover
 
 Thank you for having us.
 
-Simulation-based inference brings three things to retrievals: simulators as realistic as needed, expensive physics run once and in parallel, and validation of every result.
+The whole tutorial rests on one idea. If you can simulate your data, you can infer the parameters that produced them, without the likelihood.
 
-The tutorial rests on one idea. If we can simulate the data, we can infer the parameters that produced them, without evaluating the likelihood.
+For retrievals, this buys three things. Realistic simulators. Expensive physics, run once and in parallel. And results we can actually check.
 
 ---
 
@@ -38,7 +38,7 @@ background-size: cover
 
 ???
 
-First example, the ocean. Satellite altimeters measure the height of the sea surface along their tracks, at a resolution of tens of kilometres. Here, the Gulf Stream off North Carolina. Red is above average, blue below. This is $x$.
+Let's start far from exoplanets, with the ocean. From space, altimeters measure the height of the sea surface. Here, the Gulf Stream off North Carolina. This is our observation, $x$.
 
 ---
 
@@ -56,7 +56,7 @@ class: black-slide
 
 ???
 
-The surface height is shaped by the currents, the Gulf Stream, its meanders and its eddies. This is $z$. Many states of the ocean fit the same coarse heights, so we want a distribution over them.
+What shapes this surface are the currents, with their meanders and eddies. That's the hidden state, $z$. Many different oceans fit the same coarse picture.
 
 ---
 
@@ -74,9 +74,9 @@ class: black-slide
 
 ???
 
-The currents follow the Navier–Stokes equations on a rotating Earth. Their constants, such as the viscosity, the mixing or the bottom drag, are poorly known. These are $\theta$. Here, three values of the viscosity give three different oceans.
+The currents follow known equations, but their constants are poorly known, like the viscosity. Those are the parameters, $\theta$. Three viscosities, three different oceans.
 
-The same structure appears whenever an instrument stands between us and the system we study.
+This structure shows up whenever an instrument sits between us and what we study.
 
 ---
 
@@ -94,7 +94,7 @@ class: black-slide
 
 ???
 
-Second example, gravitational waves. This is the signal recorded by LIGO on September 14, 2015. Time goes to the right, frequency up. Most of the strain, in white, is noise. In a fraction of a second, a chirp appears, a signal whose frequency rises quickly. This is $x$.
+Second example, gravitational waves. This is what LIGO recorded in September 2015. Mostly noise, and then a chirp, a fraction of a second long. That's $x$.
 
 ---
 
@@ -112,7 +112,7 @@ class: black-slide
 
 ???
 
-The chirp comes from two black holes that spiral into each other and merge. General relativity predicts the waveform. This is $z$.
+The chirp comes from two black holes merging. General relativity predicts the waveform. That's $z$.
 
 ---
 
@@ -130,7 +130,7 @@ background-size: cover
 
 ???
 
-The waveform depends on fifteen parameters of the binary, including the two masses, the two spins, the distance, the orientation and the sky position. This is $\theta$.
+The waveform depends on the masses, the spins, the distance and the orientation, fifteen numbers in all. That's $\theta$.
 
 ---
 
@@ -152,7 +152,7 @@ class: black-slide
 
 ???
 
-Third example, exoplanets. These are the four planets of HR 8799, imaged directly over seven years, with the star masked. The light of a planet, dispersed by a spectrograph, gives a spectrum from 1 to 2.5 microns. This is $x$.
+And exoplanets. Four planets around HR 8799, imaged over seven years. Spread the light of one planet, and you get a spectrum. That's $x$.
 
 ---
 
@@ -170,7 +170,7 @@ background-size: cover
 
 ???
 
-The spectrum comes from the atmosphere, its temperature profile, its molecules and its clouds. Here, the silicate clouds seen by JWST on VHS 1256 b. This is $z$.
+The spectrum comes from the atmosphere, its temperature, its molecules, its clouds. Here, silicate clouds seen by JWST. That's $z$.
 
 ---
 
@@ -188,7 +188,7 @@ background-size: cover
 
 ???
 
-The atmosphere follows from a few bulk parameters, such as the C/O ratio, the metallicity, the gravity, the radius, the clouds and the mixing. These ten hot Jupiters range from clear to cloudy. The parameters also tell where and how the planet formed. This is $\theta$.
+And the atmosphere follows from a few bulk parameters, like the C/O ratio, the metallicity or the gravity. They tell us how the planet formed. That's $\theta$.
 
 ---
 
@@ -204,9 +204,9 @@ of the parameters $\theta$, with the latent states $z$ integrated out.
 
 ???
 
-The three examples share one structure. Parameters $\theta$ set the physics, the physics produces a state $z$, and an instrument turns $z$ into an observation $x$.
+Three examples, one structure. Parameters set the physics, the physics produces a state, an instrument records it.
 
-We want the posterior over $\theta$. The likelihood requires integrating over every state $z$ that could have produced $x$, which is intractable. We can simulate the chain, but we cannot evaluate it.
+We want the posterior. The catch is the likelihood, which integrates over every hidden state. We can simulate it, but we can't evaluate it.
 
 ---
 
@@ -252,7 +252,7 @@ class: middle
 
 ???
 
-Generation runs from left to right, through the prior, the physics and the instrument. Each step is a simulator we trust. Inference runs from right to left, from $x$ back to $\theta$.
+Generation goes left to right, through the prior, the physics and the instrument. Inference goes back, from right to left.
 
 ---
 
@@ -270,9 +270,7 @@ Prior, $\theta \sim p(\theta)$: six parameters, each uniform over a range.
 
 ???
 
-We use a small simulator throughout the tutorial. It is a toy, with the same structure as a real retrieval code.
-
-It has six parameters, the internal temperature, the gravity, the metallicity, the C/O ratio, the cloud-top pressure and the radius. The prior is uniform over each range.
+To make this concrete, here is a small simulator that we'll use throughout. It's a toy, but it has the structure of a real retrieval code. Six parameters, drawn uniformly from the prior.
 
 ---
 
@@ -290,9 +288,9 @@ Physics, $z \sim p(z | \theta)$: a temperature profile, chemistry, and a cloud d
 
 ???
 
-The physics gives the atmosphere, that is, a temperature profile, the abundances of water, methane and carbon monoxide, and a cloud deck. This is $z$. Methane appears where the atmosphere is cool enough.
+The physics gives the atmosphere. A temperature profile, water, methane, carbon monoxide, and a cloud deck. Watch methane appear where it gets cool.
 
-As in petitRADTRANS retrievals, the profile is parameterized, not self-consistent. It is a grey Eddington profile set by the internal temperature and the gravity.
+As in usual retrievals, the profile is parameterized, not self-consistent.
 
 ---
 
@@ -310,7 +308,7 @@ Radiative transfer: the light $f(\theta)$ that the atmosphere emits.
 
 ???
 
-Radiative transfer gives the emitted light. The dips are water and methane bands. The peaks are windows into deeper, hotter layers.
+Radiative transfer gives the light. The dips are absorption bands. The peaks are windows into deeper, hotter layers.
 
 ---
 
@@ -328,9 +326,9 @@ Instrument, $x \sim p(x | z)$: binned, with noise, any noise we can simulate.
 
 ???
 
-The instrument bins the light and adds noise. This is $x$. Everything to its left is hidden.
+Finally, the instrument bins the light and adds noise. That's all we observe.
 
-The simulator is easy to run forward. The question is how to go back.
+Running this forward is easy. The question is how to go back.
 
 ---
 
@@ -348,11 +346,11 @@ Before seeing any data, we check the .bold[forward model] against domain knowled
 
 ???
 
-Before any data, we check the prior and the simulator together. We simulate from the prior and reduce each spectrum to a summary statistic known from other objects, here the J − K colour. Known brown dwarfs and directly imaged planets lie roughly between −1 and 3.
+Before touching any data, we check the simulator. We draw from the prior and look at a number we know from real objects, the J − K colour.
 
-Our toy fails this check. 42% of the prior draws are redder than any known object, so the prior or the physics, or both, should be revised.
+Our toy fails. 42% of the draws are redder than anything known. In a real analysis, we would fix the prior or the physics now.
 
-The check uses domain knowledge only. Tuning the prior to the observation would use the data twice. It also costs nothing, since these simulations are the training set of NPE.
+And we never use the observation for this. That would be using the data twice.
 
 ---
 
@@ -368,7 +366,7 @@ Estimating $p(\theta | x)$: classical methods in blue, simulation-based inferenc
 
 ???
 
-Many algorithms invert the simulator. In blue, the classical ones, MCMC, nested sampling and ABC. In pink, simulation-based inference with neural networks, which estimates the posterior, the likelihood or the likelihood ratio.
+How do we go back? There are many algorithms. In blue, the classics, MCMC, nested sampling, ABC. In pink, simulation-based inference with neural networks.
 
 ---
 
@@ -385,7 +383,7 @@ Estimating $p(\theta | x)$: classical methods in blue, simulation-based inferenc
 
 ???
 
-We focus on two of them, neural posterior estimation (NPE) and its flow-matching variant (FMPE). NPE is the simplest, and the most used so far for exoplanets.
+Today, two of them. Neural posterior estimation, and its flow-matching cousin. NPE is the simplest, and the most used for exoplanets.
 
 ---
 
@@ -403,9 +401,9 @@ $$\mathbb{E}\_{p(x)} \, \text{KL}\big( p(\theta|x) \, \Vert \, q\_\phi(\theta|x)
 
 ???
 
-NPE trains a network that maps an observation $x$ to a distribution over $\theta$. The network is typically a normalizing flow.
+The idea of NPE is simple. Train a network that takes a spectrum and returns a distribution over the parameters.
 
-The training pairs come from the simulator. The loss is the negative log-probability of the true $\theta$ given $x$. Up to a constant, it is the expected KL divergence to the true posterior, so its minimum is the posterior itself. The likelihood is never evaluated.
+The training pairs come from the simulator. The minimum of this loss is the true posterior. And we never evaluate a likelihood.
 
 ---
 
@@ -422,11 +420,9 @@ $$\log q\_\phi(\theta | x) = \log \mathcal{N}(t\_3 \circ t\_2 \circ t\_1(\theta)
 
 ???
 
-The network has two parts. An embedding network compresses the spectrum into a few learned features. A normalizing flow, three spline transforms conditioned on these features, maps $\theta$ to a standard Gaussian.
+The network has two parts. An embedding network summarizes the spectrum. A normalizing flow turns these features into a density over the parameters.
 
-The map is invertible with a tractable Jacobian, so the density follows from the change of variables. To sample, we draw from the Gaussian and invert the map.
-
-Below the flow, samples for our observed spectrum become, layer by layer, a round Gaussian.
+The flow is an invertible map to a Gaussian, so the density is exact. Watch real samples become Gaussian, layer by layer.
 
 ---
 
@@ -446,13 +442,11 @@ The embedding is trained jointly with the flow, by the same loss.
 
 ???
 
-The animation passes six spectra through the trained network. The colours show the actual values of a few units, relative to their average over these spectra, and the 64 features change with each spectrum.
+Let's open the embedding. It's a stack of simple layers, here a plain multilayer perceptron, because our spectra are short.
 
-The embedding network is a choice, like the prior or the flow. Here, the spectrum has 94 bins on a fixed grid, so a multilayer perceptron suffices. Each layer multiplies its input by a matrix, adds a vector, and applies a simple nonlinear function, here the ELU. Four such layers take the 94 bins to 512, 256, 256 and finally 64 features, which condition the flow. We did not compare it with other architectures on this toy; the posterior already matches MCMC.
+That's a choice. Longer or messier data would call for convolutions or transformers.
 
-The weights are not set by hand. The same loss trains the embedding and the flow together, so the features are those that best inform the posterior. They replace hand-crafted summary statistics. On our toy, the trained network reads the C/O ratio from the CO and CH4 bands, the cloud top from the windows, and the radius from the continuum peaks. Nobody told it where the molecules absorb.
-
-Other data call for other choices. Convolutional networks share filters along wavelength and scale to thousands of bins. Transformers take each bin or segment with its wavelength and error bar, which suits irregular grids and combined instruments, as for WISE 1738. Residual connections help when the network is deep.
+Nobody tells it where the molecules absorb. It learns that from the simulations.
 
 ---
 
@@ -472,9 +466,9 @@ with the noise added on the fly. The simulations run in parallel, once.
 
 ???
 
-We simulate half a million pairs, in half an hour on a laptop. Each line is one planet, coloured by its internal temperature. With petitRADTRANS, twelve million spectra took about 17,000 CPU hours. This cost is paid once.
+The training data is just simulations. Half a million here, half an hour on a laptop. With petitRADTRANS, twelve million spectra took about 17,000 CPU hours. That cost is paid once, in parallel.
 
-We minimize the empirical loss by stochastic gradient descent. The noise is redrawn at each epoch. The loss decreases on training and validation pairs.
+Then, plain gradient descent, with fresh noise at every epoch.
 
 ---
 
@@ -492,9 +486,9 @@ Once trained, the network gives the posterior of any new spectrum in a fraction 
 
 ???
 
-The network is trained once, for this simulator and this prior. Each new spectrum then gets its posterior immediately.
+Here's the payoff. Once trained, every new spectrum gets its posterior instantly. Ten planets in a couple of seconds, against an hour and a half with MCMC.
 
-Here, ten new planets. NPE handles all of them in about two seconds, where MCMC or nested sampling would take an hour and a half. Some posteriors are wider than others, because some spectra constrain their planet less. For a survey of hundreds of planets, this changes what is possible.
+And because it's cheap, we can afford to test it.
 
 ---
 
@@ -508,7 +502,7 @@ Consider an observed spectrum $x\_{\rm obs}$, simulated from known parameters $\
 
 ???
 
-We now apply the trained network to an observed spectrum. We simulated it ourselves, so we know the true parameters and can check the answer.
+Now, one observed spectrum. We simulated it ourselves, so we know the answer.
 
 ---
 
@@ -518,9 +512,9 @@ class: middle
 
 ???
 
-In red, NPE. In grey, MCMC, and in orange, nested sampling, both with the exact likelihood. The three agree and contain the true parameters, in blue.
+NPE in red, MCMC in grey, nested sampling in orange. They agree, and they contain the truth.
 
-NPE took two seconds, MCMC nine minutes and nested sampling about an hour. With a real radiative transfer code, the last two take days.
+NPE took two seconds. MCMC, nine minutes. Nested sampling, an hour.
 
 ---
 
@@ -542,13 +536,11 @@ Coverage is necessary but not sufficient, since the prior itself is calibrated. 
 
 ???
 
-The first check tests the network. Posteriors are cheap, so we compute a thousand of them for simulated spectra whose parameters we know.
+But can we trust it? We check calibration, on a thousand simulated spectra.
 
-On the left, the 90% credible interval of the C/O ratio for each test case. Green intervals contain the true value, red ones miss it. On the right, the same count at every credibility level, the expected coverage. The gray bands show where a perfectly calibrated network would land by chance with this many cases, at one, two and three sigma. They narrow as cases accumulate. The curve stays within them, so the posteriors are calibrated. Above would be conservative, below overconfident.
+On the left, 90% intervals. They should catch the truth 90% of the time. On the right, the same at every level. The grey bands show what chance allows, and we stay inside them.
 
-Coverage is necessary but not sufficient, since the prior is calibrated too. TARP, MIRA and L-C2ST are stronger tests.
-
-The check took a minute. With MCMC, a thousand retrievals would take a week.
+This took a minute. With MCMC, a week.
 
 ---
 
@@ -571,9 +563,7 @@ Neural posteriors can be .bold[overconfident], even when trained as recommended.
 
 ???
 
-In a benchmark of common SBI algorithms, many were overconfident on some problems, even with the recommended training. An overconfident posterior claims what the data do not support.
-
-Balanced NPE adds a regularizer to the loss, which makes posteriors calibrated or conservative. The curves move above the diagonal.
+Calibration is not a formality. In a benchmark, many SBI methods were overconfident, even when trained as recommended. Balanced NPE pushes them to the safe side.
 
 ---
 
@@ -591,7 +581,7 @@ To check the .bold[forward model], we draw $\theta \sim q\_\phi(\theta | x\_{\rm
 
 ???
 
-The second check tests the forward model, which calibration cannot do. We draw parameters from the posterior, simulate, and compare with the observation. The simulated spectra cover the data within the noise.
+Calibration tests the network. It says nothing about the simulator. For that, we simulate from the posterior and compare with the data. Here, it covers the data within the noise.
 
 ---
 
@@ -605,7 +595,7 @@ Consider now a new observation of the same planet, with an absorption band at 1.
 
 ???
 
-So far, the simulator was correct. Here, we add an absorption band at 1.52 microns, where ammonia absorbs in cool atmospheres. Our simulator has no ammonia. In dashed grey, the same planet without the band.
+Now, let's break the simulator. Same planet, but with an absorption band that our simulator doesn't have. Think of ammonia.
 
 ---
 
@@ -619,11 +609,9 @@ class: middle
 
 ???
 
-On the left, the posteriors of the gravity and the radius. NPE, MCMC and nested sampling agree, are tight, and all miss the truth. The gravity even hits the edge of the prior. MCMC and nested sampling are exact, but for the wrong model.
+All three methods agree. They're tight. And they're all wrong. MCMC is exact, but for the wrong model.
 
-Calibration does not catch this, since it is computed on simulated spectra. The posterior predictive check does. The fit looks fine by eye, but two residuals reach five to six sigma at the missing band.
-
-The fix is in the model, by adding the physics or inflating the noise model.
+Calibration can't see this. The residuals can. Two points at five to six sigma, right at the band. The fix is in the model.
 
 ---
 
@@ -647,11 +635,7 @@ class: middle
 
 ???
 
-Our 2023 paper with Malavika Vasist, François Rozet and Olivier Absil first applied NPE to atmospheric retrieval. The benchmark spectrum is simulated, modelled on HR 8799 e.
-
-The simulator is petitRADTRANS with sixteen parameters, including clouds and disequilibrium chemistry. Training used twelve million simulations, about 17,000 CPU hours.
-
-On the left, NPE agrees with MultiNest. On the right, the same two checks as on the toy. The posterior predictive reproduces the observation, and the coverage lies on the diagonal.
+Does this work at scale? Our 2023 paper did it with petitRADTRANS, sixteen parameters and twelve million simulations. NPE matches MultiNest, and passes both checks.
 
 ---
 
@@ -670,9 +654,7 @@ class: middle
 
 ???
 
-This is real data. WISE 1738 is a brown dwarf at about 400 kelvin, a proxy for cold giant planets. We combined JWST/MIRI with near-infrared spectra from HST and Gemini.
-
-NPE finds water, methane and ammonia, and also carbon monoxide and carbon dioxide, a sign of vertical mixing. It constrains the isotopologue 15-ammonia for the first time. The posteriors passed coverage and other diagnostics.
+And on real data. WISE 1738, a brown dwarf at 400 kelvin, with JWST, HST and Gemini. NPE finds water, methane, ammonia, and signs of vertical mixing. Everything passed the diagnostics.
 
 ---
 
@@ -695,7 +677,7 @@ A continuous flow replaces the chain of invertible transformations by a vector f
 
 ???
 
-Any conditional density estimator can serve in NPE. On the left, a discrete flow, as we used. It composes a few invertible transformations, whose architecture must keep the Jacobian tractable. On the right, a continuous flow, where an unconstrained network defines a vector field and an ODE moves samples from the Gaussian to the posterior. It is more flexible. Both networks also take the noise level as input. Continuous flows tend to scale better with the number of parameters; for gravitational waves, with 15 parameters, flow matching outperformed discrete flows.
+The flow is only one choice. A continuous flow replaces the chain of transformations by a vector field. It's more flexible, and it scales better with many parameters.
 
 ---
 
@@ -717,7 +699,7 @@ class: middle
 
 ???
 
-Samples move along a vector field, from noise at time zero to the posterior at time one. Sampling means solving an ODE.
+Picture samples flowing from noise to the posterior. Sampling means solving an ODE.
 
 ---
 
@@ -733,9 +715,9 @@ which requires no integration of the flow.
 
 ???
 
-The density is exact, as for discrete flows. We follow the flow backwards, from the parameters to the noise. The sum of log-determinants becomes an integral of the trace of the Jacobian, which is also the divergence of the vector field.
+The density is still exact. Same idea as before, with tiny steps. The sum of log-determinants becomes an integral of a trace.
 
-The vector field is trained by flow matching. We draw noise and a simulated pair, and take a point on the straight line from the noise to the parameters. The network should point along that line. Training is a regression, with no constraint on the architecture.
+And training is plain regression. Point along straight lines, from noise to parameters.
 
 ---
 
@@ -756,11 +738,7 @@ class: middle
 
 ???
 
-This is the paper by Timothy Gebhard, Jonas Wildberger, Max and colleagues, on the same benchmark.
-
-The network takes the noise level as input, so one network covers any signal-to-noise ratio. Samples are reweighted by importance sampling, which corrects the network and gives the evidence.
-
-On the left, FMPE and NPE, with and without importance sampling, agree with two nested samplers. On the right, FMPE is usually the better proposal.
+Max and colleagues applied this to the same benchmark. One network for any noise level. And importance sampling on top, which brings us to the next slide.
 
 ---
 
@@ -780,11 +758,9 @@ follow the .bold[exact] posterior.
 
 ???
 
-When the likelihood can be evaluated, even at a cost, the network becomes a proposal. Each sample gets a weight, the likelihood times the prior over the density of the network. This requires an exact density.
+Here's a cheat code. If you can evaluate the likelihood, even slowly, the network becomes a proposal. Sample, weight, resample, and you land on MCMC.
 
-The animation shows the three steps, sampling, weighting and resampling. The result lands on MCMC.
-
-The efficiency, here about 60%, measures the quality of the proposal. The mean weight is the evidence. The cost is a few thousand likelihood evaluations, not millions.
+As a bonus, the average weight is the evidence. A few thousand likelihood calls, not millions.
 
 ---
 
@@ -796,7 +772,7 @@ class: middle
 
 ???
 
-All six parameters. In red, the network alone. In blue, after importance sampling. In grey, MCMC. Blue and grey coincide.
+All six parameters. Red is the network alone, blue after reweighting, grey is MCMC. Blue and grey coincide.
 
 ---
 
@@ -810,11 +786,9 @@ We compare two simulators, with and without a cloud deck. By eye, both fit.
 
 ???
 
-Clouds or a molecule detection are questions about models. We compare the toy with clouds, six parameters, and without, five parameters.
+Are there clouds? That's a question about models, not parameters. So, two simulators, with and without clouds.
 
-On the left, a cloudy planet. Both models fit by eye, but the clear model misses a few bins by two or three sigma. Its chi-square is worse by about 47, and the log Bayes factor is 20.
-
-On the right, a clear planet. Both models fit, the cloudy one by putting its clouds deep. The log Bayes factor of about minus one is the Occam penalty for the unneeded cloud parameter.
+On the cloudy planet, both fit by eye, but the evidence strongly favours clouds. On the clear one, a small penalty for the useless cloud parameter.
 
 ---
 
@@ -835,9 +809,11 @@ The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ com
 
 ???
 
-The Bayes factor is the ratio of the evidences, the probabilities of the observation under each model. We estimate it in three ways.
+The Bayes factor compares the evidences. Three ways to get it.
 
-Nested sampling is the reference, with fifty thousand to a million likelihood calls per spectrum and model. Each estimate was repeated six times with new seeds, retraining the networks. Nested sampling varies by about 0.3 between runs. Importance sampling varies by 0.01, even though each run retrains the network. Importance sampling gives the same answer, as the mean weight. A classifier needs no likelihood. Its log-odds give the Bayes factor, but they saturate on the cloudy planet, which is enough for a decision, not for a value.
+Nested sampling, the reference. Importance sampling, the same answer, and far more reproducible. And a classifier, with no likelihood at all, but it saturates when the evidence is overwhelming.
+
+The error bars come from six repeated runs.
 
 ---
 
@@ -861,15 +837,11 @@ With a likelihood, importance sampling corrects the network and gives the eviden
 
 ???
 
-Five points to remember.
+To sum up.
 
-Inference requires a simulator, not a likelihood. Make the simulator as realistic as needed, not as convenient as the sampler requires.
+You need a simulator, not a likelihood, so make it realistic. NPE is trained once, and then it's fast enough to be checked. Check the network with calibration, and the model with predictive checks.
 
-NPE is trained once and then gives posteriors in seconds, which makes diagnostics affordable.
-
-Calibration tests the network, posterior predictive checks test the model, and the evidence compares models. With a likelihood, importance sampling makes the posterior exact.
-
-Prefer an overdispersed posterior to an overconfident one. The network has seen only what the simulator produces, and outside of it, it still answers.
+Prefer overdispersed to overconfident. And remember, outside what it was trained on, the network still answers, silently.
 
 ---
 
@@ -899,7 +871,7 @@ Simulation-based inference for exoplanets
 
 ???
 
-Our review with Max is the most direct follow-up to this tutorial. The PNAS paper is a short overview, the practical guide covers the workflow, and the tutorial review covers diffusion and flow-matching estimators. The second list gives the exoplanet papers in chronological order.
+If you want to go further, start with our review with Max. The rest is for the curious.
 
 ---
 
@@ -911,6 +883,6 @@ background-size: cover
 
 ???
 
-A prior, physics and an instrument make a simulator. We cannot evaluate the likelihood, but we can simulate, and that is enough.
+A prior, physics, an instrument. That's a simulator. We can't evaluate the likelihood, but we can simulate, and that's enough.
 
 Thank you.
