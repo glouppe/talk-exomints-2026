@@ -144,24 +144,28 @@ def figures():
     fig, ax = plt.subplots(figsize=(7.5, 4.8), dpi=100)
     methods = [("importance sampling", "is", "#d1495b"), ("nested sampling", "nested", "#555"),
                ("classifier", "clf", "#2a9d8f")]
+    def runs(o, key):
+        """log B(cloudy:clear) of every run: the original (seed 0) and the repetitions in D/rep/ (seeds 1..5)."""
+        R = D + "rep/"
+        lz = lambda f: float(np.load(f)["logz"])
+        seeds = range(1, 6) if os.path.isdir(R) else []
+        if key == "clf":
+            return [float(np.load(f"{D}classifier-logB-{o}.npy"))] + [float(np.load(f"{R}classifier-logB-{o}-s{s}.npy"))
+                                                                    for s in seeds]
+        if key == "nested":
+            return [lz(f"{D}cloudy-{o}/nested.npz") - lz(f"{D}clear-{o}/nested.npz")] + \
+                   [lz(f"{R}ns/cloudy-{o}-s{s}/nested.npz") - lz(f"{R}ns/clear-{o}-s{s}/nested.npz") for s in seeds]
+        return [lz(f"{D}cloudy-{o}/is.npz") - lz(f"{D}clear-{o}/is.npz")] + \
+               [lz(f"{R}cloudy-s{s}/{o}/is.npz") - lz(f"{R}clear-s{s}/{o}/is.npz") for s in seeds]
+
     for j, o in enumerate(OBS):
         for k, (label, key, c) in enumerate(methods):
-            if key == "clf":
-                p = f"{D}classifier-logB-{o}.npy"
-                if not os.path.exists(p):
-                    continue
-                v, e = float(np.load(p)), 0.0
-            else:
-                fs = [f"{D}{m}-{o}/{key}.npz" for m in MODELS]
-                if not all(os.path.exists(f) for f in fs):
-                    continue
-                a, b = np.load(fs[0]), np.load(fs[1])
-                ek = "logz_err" if key == "is" else "logzerr"
-                v = float(a["logz"] - b["logz"])
-                e = float(np.hypot(a[ek], b[ek])) if ek in a and ek in b else 0.0
+            v = np.array(runs(o, key))
             y = j + (k - 1) * 0.22
-            ax.errorbar([v], [y], xerr=[e], fmt="o", ms=14, color=c, elinewidth=2, capsize=4,
-                        label=label if j == 0 else None)
+            # each run as a faint dot, the mean with ±1 standard deviation over the runs
+            ax.plot(v, np.full(len(v), y), "o", ms=5, color=c, alpha=0.4, lw=0)
+            ax.errorbar([v.mean()], [y], xerr=[v.std(ddof=1) if len(v) > 1 else 0.0], fmt="o", ms=9, color=c,
+                        elinewidth=2.5, capsize=6, label=label if j == 0 else None)
     ax.axvline(0, color="#999", lw=1.5, ls="--")
     ax.set_yticks([0, 1])
     ax.set_yticklabels(["cloudy\nplanet", "clear\nplanet"])

@@ -820,7 +820,7 @@ On the right, a clear planet. Both models fit, the cloudy one by putting its clo
 
 class: middle
 
-<img src="figures/mc-bayes.png" style="display: block; margin: 0 auto; width: 46%;">
+<img src="figures/mc-bayes.png?v=2" style="display: block; margin: 0 auto; width: 46%;">
 
 The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ compares the evidence of the two models.
 
@@ -830,14 +830,14 @@ The .bold[Bayes factor] $B = p(x | \text{cloudy}) \,/\, p(x | \text{clear})$ com
 <div><span>Classifier</span>$$\log B \approx \log \frac{d_\psi(x)}{1 - d_\psi(x)}, \quad d_\psi(x) \approx p(\text{cloudy}|x)$$</div>
 </div>
 
-.footnote[Classifier: [Radev et al](https://arxiv.org/abs/2004.10629), 2020. Model comparison without the evidence: MIRA, [Sharief et al](https://arxiv.org/abs/2605.02014), ICML 2026.]
+.footnote[Error bars: one standard deviation over 6 runs with new seeds. Classifier: [Radev et al](https://arxiv.org/abs/2004.10629), 2020. Model comparison without the evidence: MIRA, [Sharief et al](https://arxiv.org/abs/2605.02014), ICML 2026.]
 
 
 ???
 
 The Bayes factor is the ratio of the evidences, the probabilities of the observation under each model. We estimate it in three ways.
 
-Nested sampling is the reference, with fifty thousand to a million likelihood calls per spectrum and model. Importance sampling gives the same answer, as the mean weight. A classifier needs no likelihood. Its log-odds give the Bayes factor, but they saturate on the cloudy planet, which is enough for a decision, not for a value.
+Nested sampling is the reference, with fifty thousand to a million likelihood calls per spectrum and model. Each estimate was repeated six times with new seeds, retraining the networks. Nested sampling varies by about 0.3 between runs. Importance sampling varies by 0.01, even though each run retrains the network. Importance sampling gives the same answer, as the mean weight. A classifier needs no likelihood. Its log-odds give the Bayes factor, but they saturate on the cloudy planet, which is enough for a decision, not for a value.
 
 ---
 
