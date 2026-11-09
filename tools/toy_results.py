@@ -481,11 +481,13 @@ def misspec(i=1, j=5, n_ppc=200, d=".render/data/toy-misspec/"):
     ar = fig.add_axes([0.46, 0.14, 0.52, 0.22], sharex=asp)
 
     # posterior: contours (68, 95%) of NPE and MCMC, and the truth
+    ns = np.load(d + "nested.npz")["samples"] if os.path.exists(d + "nested.npz") else None
     pts = np.vstack([a[:, [i, j]], m[:, [i, j]], T.THETA_STAR[[i, j]][None]])
     lo, hi = pts.min(0), pts.max(0)
     pad = 0.12 * (hi - lo)
     lo, hi = lo - pad, hi + pad
-    for smp, col, lab in [(m, MCMC_COL, "MCMC"), (a, NPE_COL, "NPE")]:
+    runs = [(m, MCMC_COL, "MCMC")] + ([(ns, NS_COL, "nested sampling")] if ns is not None else []) + [(a, NPE_COL, "NPE")]
+    for smp, col, lab in runs:
         Hh, xe, ye = np.histogram2d(smp[:, i], smp[:, j], bins=60, range=[[lo[0], hi[0]], [lo[1], hi[1]]])
         Hh = gaussian_filter(Hh, 1.3).T
         flat = np.sort(Hh.ravel())[::-1]
