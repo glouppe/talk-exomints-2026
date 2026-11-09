@@ -30,6 +30,7 @@ import toy_npe as N
 OUT = N.OUT
 SIGMA = N.SIGMA
 NPE_COL, MCMC_COL, NS_COL, TRUE_COL = "#d1495b", "#555555", "#e08a1e", "#1f5fae"
+FMPE_COL = "#7b3fa0"
 # Font sizes are set per figure so that, once scaled onto the slide, text appears at the same size as in the
 # simulator walk-through (20 pt in a 1600 px frame shown at 852 px: ~15 px labels, ~20 px titles).
 plt.rcParams.update({"font.size": 18, "axes.spines.top": False, "axes.spines.right": False,
@@ -162,6 +163,42 @@ def corner_plot():
     fig.legend(handles=handles,
                loc="upper right", bbox_to_anchor=(0.97, 0.97), frameon=False, fontsize=21)
     fig.savefig("figures/toy-corner.png", dpi=100, bbox_inches="tight")
+
+
+def fmpe_corner(fmpe_dir=".render/data/fmpe/toy-10m/"):
+    """FMPE (10M simulations) against NPE (500k) and MCMC on the benchmark observation."""
+    import corner
+    p = np.load(OUT + "posterior.npz")
+    fm = np.load(fmpe_dir + "fmpe_posterior.npz")
+    rng = np.random.default_rng(0)
+    m = np.load(OUT + "mcmc.npz")["samples"]
+    b = m[rng.choice(len(m), 20000, replace=False)]
+    a, c = p["samples"], fm["samples"]
+    lo = np.min([np.percentile(z, 0.5, 0) for z in (a, b, c)], axis=0)
+    hi = np.max([np.percentile(z, 99.5, 0) for z in (a, b, c)], axis=0)
+    rng_ = [(l - 0.1 * (h - l), h + 0.1 * (h - l)) for l, h in zip(lo, hi)]
+    plt.rcParams["font.size"] = 21
+    kw = dict(bins=35, smooth=1.0, plot_datapoints=False, plot_density=False, levels=(0.68, 0.95), range=rng_,
+              labels=T.LABELS, label_kwargs={"fontsize": 21}, max_n_ticks=2, labelpad=0.12, fill_contours=False)
+    fig = corner.corner(b, color=MCMC_COL, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    corner.corner(a, color=NPE_COL, fig=fig, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    corner.corner(c, color=FMPE_COL, fig=fig, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+    n = len(T.NAMES)
+    for k in range(n):
+        ax = fig.axes[k * n + k]
+        ax.relim()
+        ax.autoscale(axis="y")
+        ax.set_ylim(0, ax.get_ylim()[1] * 1.05)
+    corner.overplot_lines(fig, p["theta_star"], color=TRUE_COL, lw=1.5)
+    fig.set_size_inches(12, 12)
+    for ax in fig.axes:
+        ax.tick_params(labelsize=21)
+    handles = [plt.Line2D([], [], color=FMPE_COL, lw=3, label="FMPE, 10M simulations"),
+               plt.Line2D([], [], color=NPE_COL, lw=3, label="NPE, 500k simulations"),
+               plt.Line2D([], [], color=MCMC_COL, lw=3, label="MCMC"),
+               plt.Line2D([], [], color=TRUE_COL, lw=2, label=r"true $\theta$")]
+    fig.legend(handles=handles, loc="upper right", bbox_to_anchor=(0.97, 0.97), frameon=False, fontsize=21)
+    fig.savefig("figures/toy-fmpe-corner.png", dpi=100, bbox_inches="tight")
 
 
 # ------------------------------------------------------------------ ppc
@@ -938,4 +975,4 @@ def is_anim(n=3000, i=0, j=3, FPS=24, seed=4):
 
 
 if __name__ == "__main__":
-    {"flow": flow, "loss": loss, "corner": corner_plot, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "embedding": embedding, "embedding_arch": embedding_arch, "embedding_anim": embedding_anim, "saliency": saliency, "misspec": misspec, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
+    {"flow": flow, "loss": loss, "corner": corner_plot, "fmpe_corner": fmpe_corner, "ppc": ppc, "amortize": amortize, "xobs": xobs, "prior_pc": prior_pc, "embedding": embedding, "embedding_arch": embedding_arch, "embedding_anim": embedding_anim, "saliency": saliency, "misspec": misspec, "gallery": gallery, "coverage": coverage, "coverage_anim": coverage_anim, "is_corner": is_corner, "is_anim": is_anim}[sys.argv[1]]()
