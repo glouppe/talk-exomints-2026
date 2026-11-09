@@ -678,8 +678,6 @@ class: middle
 
 ## Beyond normalizing flows
 
-NPE is agnostic to the choice of density estimator $q\_\phi(\theta | x)$. A discrete flow composes a few invertible transformations, whose architecture must keep the Jacobian tractable. A continuous flow integrates a vector field given by an unconstrained network, which makes it more flexible and better suited to high-dimensional parameter spaces.
-
 .grid[
 .kol-1-2[.center.width-100[![](figures/gebhard-dnf.png)]]
 .kol-1-2[.center.width-100[![](figures/gebhard-cnf.png)]]
@@ -693,7 +691,7 @@ NPE is agnostic to the choice of density estimator $q\_\phi(\theta | x)$. A disc
 
 ???
 
-Any conditional density estimator can serve in NPE. On the left, a discrete flow, as we used. On the right, a continuous flow, where a network defines a vector field and an ODE moves samples from the Gaussian to the posterior. Both networks also take the noise level as input. Continuous flows tend to scale better with the number of parameters; for gravitational waves, with 15 parameters, flow matching outperformed discrete flows.
+Any conditional density estimator can serve in NPE. On the left, a discrete flow, as we used. It composes a few invertible transformations, whose architecture must keep the Jacobian tractable. On the right, a continuous flow, where an unconstrained network defines a vector field and an ODE moves samples from the Gaussian to the posterior. It is more flexible. Both networks also take the noise level as input. Continuous flows tend to scale better with the number of parameters; for gravitational waves, with 15 parameters, flow matching outperformed discrete flows.
 
 ---
 
