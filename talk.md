@@ -552,7 +552,7 @@ The check took a minute. With MCMC, a thousand retrievals would take a week.
 
 class: middle
 
-.avatars[![](figures/faces/arnaud.jpg)![](figures/faces/joeri.png)![](figures/faces/frozet.jpg)]
+.avatars[![](figures/faces/arnaud.jpg)![](figures/faces/joeri.png)![](figures/faces/frozet.jpg)![](figures/faces/gilles.jpg)]
 
 Neural posteriors can be .bold[overconfident], even when trained as recommended. Balancing the training makes them conservative, which is preferable for science.
 
@@ -627,7 +627,7 @@ The fix is in the model, by adding the physics or inflating the noise model.
 
 class: middle
 
-.avatars[![](figures/faces/malavika.jpg)![](figures/faces/frozet.jpg)![](figures/faces/absil.jpg)![](figures/faces/molliere.jpg)![](figures/faces/nasedkin.jpg)]
+.avatars[![](figures/faces/malavika.jpg)![](figures/faces/frozet.jpg)![](figures/faces/absil.jpg)![](figures/faces/molliere.jpg)![](figures/faces/nasedkin.jpg)![](figures/faces/gilles.jpg)]
 
 <br>
 
@@ -655,7 +655,7 @@ On the left, NPE agrees with MultiNest. On the right, the same two checks as on 
 
 class: middle
 
-.avatars[![](figures/faces/malavika.jpg)![](figures/faces/molliere.jpg)![](figures/faces/absil.jpg)![](figures/faces/more.png)]
+.avatars[![](figures/faces/malavika.jpg)![](figures/faces/molliere.jpg)![](figures/faces/absil.jpg)![](figures/faces/gilles.jpg)![](figures/faces/more.png)]
 
 .center.width-90[![](figures/wise-header.png)]
 
