@@ -678,6 +678,8 @@ class: middle
 
 ## Beyond normalizing flows
 
+A continuous flow replaces the chain of invertible transformations by a vector field, given by an unconstrained network. It is more flexible and scales better to high-dimensional parameter spaces.
+
 .grid[
 .kol-1-2[.center.width-100[![](figures/gebhard-dnf.png)]]
 .kol-1-2[.center.width-100[![](figures/gebhard-cnf.png)]]
