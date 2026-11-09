@@ -10,7 +10,9 @@ Sampling integrates the ODE with RK4; the log-density is exact, by integrating t
     python tools/toy_fmpe.py observe   # samples on x_obs -> $TOY_OUT/fmpe_posterior.npz
     python tools/toy_fmpe.py is        # importance sampling with the FMPE proposal -> $TOY_OUT/fmpe_is.npz
 
-Environment: TOY_OUT, EPOCHS, BATCH, ODE_STEPS.
+Environment: TOY_OUT, EPOCHS, BATCH, ODE_STEPS, WIDTH, DROPOUT, WEIGHT_DECAY.
+The validation loss is monitored and the best checkpoint is kept (the vector field memorizes the training pairs
+without regularization: validation loss rose after ~5 epochs with width 512, no dropout).
 """
 
 import os
@@ -27,6 +29,9 @@ OUT = N.OUT
 SIGMA_MIN = 1e-4
 ALPHA = 1.0  # time prior p(t) ∝ t^(1 / (1 + ALPHA)), as in Dax et al 2023
 ODE_STEPS = int(os.environ.get("ODE_STEPS", 64))
+WIDTH = int(os.environ.get("WIDTH", 512))
+DROPOUT = float(os.environ.get("DROPOUT", 0.1))
+WEIGHT_DECAY = float(os.environ.get("WEIGHT_DECAY", 1e-2))
 
 
 def build():
@@ -36,13 +41,13 @@ def build():
     class Block(nn.Module):
         def __init__(self, d):
             super().__init__()
-            self.net = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d), nn.GELU(), nn.Linear(d, d))
+            self.net = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d), nn.GELU(), nn.Dropout(DROPOUT), nn.Linear(d, d))
 
         def forward(self, z):
             return z + self.net(z)
 
     class FMPE(nn.Module):
-        def __init__(self, n_x=94, n_theta=len(N.LO), n_emb=64, width=512, depth=4, n_freq=8):
+        def __init__(self, n_x=94, n_theta=len(N.LO), n_emb=64, width=WIDTH, depth=4, n_freq=8):
             super().__init__()
             self.n_theta = n_theta
             self.embed = nn.Sequential(
@@ -119,9 +124,9 @@ def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("B
     n = len(th)
     n_val = n // 20  # same split as NPE
     model = build().to(dev)
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
-    log = []
+    log, best = [], np.inf
     for ep in range(epochs):
         model.train()
         perm = torch.randperm(n - n_val, device=dev) + n_val
@@ -142,9 +147,10 @@ def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("B
             val = np.mean([model.loss(th[:n_val][j:j + 4096], xv[j:j + 4096]).item() for j in range(0, n_val, 4096)])
         log.append((float(np.mean(losses)), float(val)))
         print(f"epoch {ep:3d}  train {np.mean(losses):.4f}  valid {val:.4f}", flush=True)
-        if ep % 10 == 9 or ep == epochs - 1:
+        if val < best:  # early stopping: keep the best validation checkpoint (atomic write)
+            best = val
             tmp = OUT + "fmpe.pt.tmp"
-            torch.save({"state": {k: v.cpu() for k, v in model.state_dict().items()}, "log": log}, tmp)
+            torch.save({"state": {k: v.cpu() for k, v in model.state_dict().items()}, "log": log, "epoch": ep}, tmp)
             os.replace(tmp, OUT + "fmpe.pt")
 
 
