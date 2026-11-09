@@ -440,7 +440,7 @@ The embedding network compresses the spectrum into a few features $h(x)$, which 
 </video>
 ]
 
-Convolutional networks or transformers suit longer spectra, irregular grids or several instruments. In all cases, the embedding is trained jointly with the flow, by the same loss.
+The embedding is trained jointly with the flow, by the same loss.
 
 ???
 
