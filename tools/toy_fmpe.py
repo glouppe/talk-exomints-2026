@@ -32,6 +32,7 @@ ODE_STEPS = int(os.environ.get("ODE_STEPS", 64))
 WIDTH = int(os.environ.get("WIDTH", 512))
 DROPOUT = float(os.environ.get("DROPOUT", 0.1))
 WEIGHT_DECAY = float(os.environ.get("WEIGHT_DECAY", 1e-2))
+EMA = float(os.environ.get("EMA", 0))  # e.g. 0.999; 0 disables
 FILM = os.environ.get("FILM") == "1"  # condition every block on (t, h(x)), not only the input
 
 
@@ -147,6 +148,8 @@ def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("B
         print("embedding from", os.environ["INIT_EMBED"], "frozen" if os.environ.get("FREEZE_EMBED") == "1" else "", flush=True)
     opt = torch.optim.AdamW([q for q in model.parameters() if q.requires_grad], lr=lr, weight_decay=WEIGHT_DECAY)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
+    import copy
+    ema = copy.deepcopy(model).eval() if EMA else None  # exponential moving average of the weights
     log, best = [], np.inf
     for ep in range(epochs):
         model.train()
@@ -159,19 +162,24 @@ def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("B
             opt.zero_grad()
             loss.backward()
             opt.step()
+            if ema is not None:
+                with torch.no_grad():
+                    for pe, pm in zip(ema.parameters(), model.parameters()):
+                        pe.mul_(EMA).add_(pm.detach(), alpha=1 - EMA)
             losses.append(loss.item())
         sched.step()
         model.eval()
+        evm = ema if ema is not None else model  # validate (and save) the averaged weights
         with torch.no_grad():
             torch.manual_seed(1)
             xv = f[:n_val] + N.SIGMA * torch.randn_like(f[:n_val])
-            val = np.mean([model.loss(th[:n_val][j:j + 4096], xv[j:j + 4096]).item() for j in range(0, n_val, 4096)])
+            val = np.mean([evm.loss(th[:n_val][j:j + 4096], xv[j:j + 4096]).item() for j in range(0, n_val, 4096)])
         log.append((float(np.mean(losses)), float(val)))
         print(f"epoch {ep:3d}  train {np.mean(losses):.4f}  valid {val:.4f}", flush=True)
         if val < best:  # early stopping: keep the best validation checkpoint (atomic write)
             best = val
             tmp = OUT + "fmpe.pt.tmp"
-            torch.save({"state": {k: v.cpu() for k, v in model.state_dict().items()}, "log": log, "epoch": ep}, tmp)
+            torch.save({"state": {k: v.cpu() for k, v in evm.state_dict().items()}, "log": log, "epoch": ep}, tmp)
             os.replace(tmp, OUT + "fmpe.pt")
 
 
