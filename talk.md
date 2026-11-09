@@ -278,7 +278,7 @@ class: middle
 
 ## A minimal exoplanet simulator
 
-Physics, $z \sim p(z | \theta)$: a temperature profile, chemistry, and a cloud deck.
+Physics, $z \sim p(z | \theta)$ or $z = g(\theta)$: temperature, chemistry, clouds.
 
 .center[
 <video poster="figures/toy-walk-2.png" muted loop autoplay playsinline class="anim">
@@ -290,7 +290,7 @@ Physics, $z \sim p(z | \theta)$: a temperature profile, chemistry, and a cloud d
 
 The physics gives the atmosphere. A temperature profile, water, methane, carbon monoxide, and a cloud deck. Watch methane appear where it gets cool.
 
-As in usual retrievals, the profile is parameterized, not self-consistent.
+The physics can be random or not. Patchy clouds that change between visits are random, so $z$ is drawn from $p(z | \theta)$. Our toy, like most retrievals today, is deterministic, so $z = g(\theta)$. Then only the instrument adds noise, and we have a likelihood. That's how we can check against MCMC later.
 
 ---
 
