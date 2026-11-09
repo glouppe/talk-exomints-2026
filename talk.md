@@ -290,7 +290,7 @@ Physics, $z \sim p(z | \theta)$ or $z = g(\theta)$: temperature, chemistry, clou
 
 The physics gives the atmosphere. A temperature profile, water, methane, carbon monoxide, and a cloud deck. Watch methane appear where it gets cool.
 
-The physics can be random or not. Patchy clouds that change between visits are random, so $z$ is drawn from $p(z | \theta)$. Our toy, like most retrievals today, is deterministic, so $z = g(\theta)$. Then only the instrument adds noise, and we have a likelihood. That's how we can check against MCMC later.
+The physics can be random or not. Patchy clouds that change between visits are random, so $z$ is drawn from $p(z | \theta)$. Our toy, like most retrievals today, is deterministic, so $z = g(\theta)$.
 
 ---
 
@@ -327,6 +327,8 @@ Instrument, $x \sim p(x | z)$: binned, with noise, any noise we can simulate.
 ???
 
 Finally, the instrument bins the light and adds noise. That's all we observe.
+
+Since our physics is deterministic, the noise is the only randomness. So in this toy we do have a likelihood, and we can check against MCMC later.
 
 Running this forward is easy. The question is how to go back.
 
