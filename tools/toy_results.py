@@ -500,7 +500,7 @@ def misspec(i=1, j=5, n_ppc=200, d=".render/data/toy-misspec/"):
     ap.set_ylim(lo[1], hi[1])
     ap.set_xlabel(T.LABELS[i])
     ap.set_ylabel(T.LABELS[j] + r" [$R_{\rm J}$]")
-    ap.legend(frameon=False, loc="upper left")
+    ap.legend(frameon=False, loc="upper left", fontsize=17, handlelength=1.4)
     ap.set_title("Posterior", loc="left", fontsize=27)
 
     # posterior predictive check

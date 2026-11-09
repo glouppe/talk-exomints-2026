@@ -609,7 +609,7 @@ So far, the simulator was correct. Here, we add an absorption band at 1.52 micro
 
 class: middle
 
-.center.width-100[![](figures/toy-misspec.png)]
+.center.width-100[![](figures/toy-misspec.png?v=2)]
 
 .center[The posteriors are .bold[confident and exact, but wrong], because of misspecification.]
 
@@ -617,7 +617,7 @@ class: middle
 
 ???
 
-On the left, the posteriors of the gravity and the radius. NPE and MCMC agree, are tight, and both miss the truth. The gravity even hits the edge of the prior. MCMC is exact, but for the wrong model.
+On the left, the posteriors of the gravity and the radius. NPE, MCMC and nested sampling agree, are tight, and all miss the truth. The gravity even hits the edge of the prior. MCMC and nested sampling are exact, but for the wrong model.
 
 Calibration does not catch this, since it is computed on simulated spectra. The posterior predictive check does. The fit looks fine by eye, but two residuals reach five to six sigma at the missing band.
 
