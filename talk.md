@@ -392,9 +392,9 @@ class: middle
 ## Neural posterior estimation
 
 We train a conditional density estimator $q\_\phi(\theta | x)$, typically a .bold[normalizing flow], to approximate the posterior of .bold[any] observation $x$,
-$$\phi^\star = \arg\min\_\phi \; \mathbb{E}\_{p(\theta, x)} \left[ -\log q\_\phi(\theta | x) \right].$$
+$$\phi^\star = \arg\min\_\phi \; \mathbb{E}\_{p(\theta)} \mathbb{E}\_{p(x | \theta)} \left[ -\log q\_\phi(\theta | x) \right].$$
 
-The expectation runs over pairs $(\theta, x)$ from the simulator, so that the likelihood is never evaluated.
+The parameters are drawn from the prior and the observations from the simulator, so that the likelihood is sampled, never evaluated.
 
 Up to a constant, this loss is the expected divergence to the true posterior,
 $$\mathbb{E}\_{p(x)} \, \text{KL}\big( p(\theta|x) \, \Vert \, q\_\phi(\theta|x) \big).$$
