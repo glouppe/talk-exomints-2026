@@ -32,6 +32,7 @@ ODE_STEPS = int(os.environ.get("ODE_STEPS", 64))
 WIDTH = int(os.environ.get("WIDTH", 512))
 DROPOUT = float(os.environ.get("DROPOUT", 0.1))
 WEIGHT_DECAY = float(os.environ.get("WEIGHT_DECAY", 1e-2))
+FILM = os.environ.get("FILM") == "1"  # condition every block on (t, h(x)), not only the input
 
 
 def build():
@@ -39,12 +40,19 @@ def build():
     import torch.nn as nn
 
     class Block(nn.Module):
-        def __init__(self, d):
+        def __init__(self, d, n_cond=0):
             super().__init__()
             self.net = nn.Sequential(nn.LayerNorm(d), nn.Linear(d, d), nn.GELU(), nn.Dropout(DROPOUT), nn.Linear(d, d))
+            self.film = nn.Linear(n_cond, 2 * d) if n_cond else None
+            if self.film is not None:  # start as the identity modulation
+                nn.init.zeros_(self.film.weight)
+                nn.init.zeros_(self.film.bias)
 
-        def forward(self, z):
-            return z + self.net(z)
+        def forward(self, z, c=None):
+            if self.film is None:
+                return z + self.net(z)
+            g, b = self.film(c).chunk(2, dim=-1)  # FiLM: the conditioning scales and shifts the normalized features
+            return z + self.net[1:](self.net[0](z) * (1 + g) + b)
 
     class FMPE(nn.Module):
         def __init__(self, n_x=94, n_theta=len(N.LO), n_emb=64, width=WIDTH, depth=4, n_freq=8):
@@ -55,7 +63,8 @@ def build():
                 nn.Linear(256, 256), nn.ELU(), nn.Linear(256, n_emb))
             self.register_buffer("freq", torch.pi * 2.0 ** torch.arange(n_freq))
             self.inp = nn.Linear(n_theta + 2 * n_freq + n_emb, width)
-            self.blocks = nn.Sequential(*[Block(width) for _ in range(depth)])
+            n_cond = 2 * n_freq + n_emb if FILM else 0
+            self.blocks = nn.ModuleList([Block(width, n_cond) for _ in range(depth)])
             self.out = nn.Sequential(nn.LayerNorm(width), nn.Linear(width, n_theta))
 
         def h(self, x):
@@ -63,8 +72,11 @@ def build():
 
         def v(self, theta_t, t, h):
             tf = t[:, None] * self.freq
-            z = torch.cat([theta_t, torch.sin(tf), torch.cos(tf), h], dim=-1)
-            return self.out(self.blocks(self.inp(z)))
+            c = torch.cat([torch.sin(tf), torch.cos(tf), h], dim=-1)
+            z = self.inp(torch.cat([theta_t, c], dim=-1))
+            for blk in self.blocks:
+                z = blk(z, c)
+            return self.out(z)
 
         def loss(self, theta1, x):
             n = len(theta1)
@@ -114,7 +126,8 @@ def load(dev="cpu"):
     return model.to(dev).eval()
 
 
-def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("BATCH", 1024)), lr=5e-4):
+def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("BATCH", 1024)),
+          lr=float(os.environ.get("LR", 5e-4))):
     import torch
     torch.manual_seed(0)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
@@ -125,7 +138,14 @@ def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("B
     n = len(th)
     n_val = n // 20  # same split as NPE
     model = build().to(dev)
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=WEIGHT_DECAY)
+    if os.environ.get("INIT_EMBED"):  # embedding taken from a trained NPE (same architecture)
+        st = torch.load(os.environ["INIT_EMBED"], weights_only=False, map_location=dev)["state"]
+        model.embed.load_state_dict({k[len("embed."):]: v for k, v in st.items() if k.startswith("embed.")})
+        if os.environ.get("FREEZE_EMBED") == "1":
+            for q in model.embed.parameters():
+                q.requires_grad_(False)
+        print("embedding from", os.environ["INIT_EMBED"], "frozen" if os.environ.get("FREEZE_EMBED") == "1" else "", flush=True)
+    opt = torch.optim.AdamW([q for q in model.parameters() if q.requires_grad], lr=lr, weight_decay=WEIGHT_DECAY)
     sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, epochs)
     log, best = [], np.inf
     for ep in range(epochs):

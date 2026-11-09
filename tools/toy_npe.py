@@ -120,9 +120,10 @@ def train(epochs=int(os.environ.get("EPOCHS", 60)), batch=int(os.environ.get("BA
     import torch
     torch.manual_seed(SEED)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    d = np.load(OUT + "pairs.npz")
-    th = torch.tensor(to_unit(d["theta"]), dtype=torch.float32, device=dev)
-    f = torch.tensor(d["f"], dtype=torch.float32, device=dev)
+    theta, flux = load_pairs()  # pairs.npz, or the shards pairs-*.npz
+    th = torch.tensor(to_unit(theta), dtype=torch.float32, device=dev)
+    f = torch.tensor(flux, dtype=torch.float32, device=dev)
+    del theta, flux
     n = len(th)
     n_val = n // 20
     model = build().to(dev)

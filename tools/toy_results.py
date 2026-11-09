@@ -165,24 +165,32 @@ def corner_plot():
     fig.savefig("figures/toy-corner.png", dpi=100, bbox_inches="tight")
 
 
-def fmpe_corner(fmpe_dir=".render/data/fmpe/toy-10m/"):
-    """FMPE (10M simulations) against NPE (500k) and MCMC on the benchmark observation."""
+def fmpe_corner(fmpe_small=".render/data/fmpe/toy-big/", fmpe_large=".render/data/fmpe/toy-10m/",
+                npe_large=".render/data/npe-10m/"):
+    """NPE and FMPE at two simulation budgets (500k solid, 10M dashed), against MCMC (filled grey)."""
     import corner
     p = np.load(OUT + "posterior.npz")
-    fm = np.load(fmpe_dir + "fmpe_posterior.npz")
     rng = np.random.default_rng(0)
     m = np.load(OUT + "mcmc.npz")["samples"]
-    b = m[rng.choice(len(m), 20000, replace=False)]
-    a, c = p["samples"], fm["samples"]
-    lo = np.min([np.percentile(z, 0.5, 0) for z in (a, b, c)], axis=0)
-    hi = np.max([np.percentile(z, 99.5, 0) for z in (a, b, c)], axis=0)
-    rng_ = [(l - 0.1 * (h - l), h + 0.1 * (h - l)) for l, h in zip(lo, hi)]
+    mc = m[rng.choice(len(m), 20000, replace=False)]
+    runs = [(p["samples"], NPE_COL, "solid", "NPE, 500k simulations"),
+            (np.load(fmpe_small + "fmpe_posterior.npz")["samples"], FMPE_COL, "solid", "FMPE, 500k simulations")]
+    if os.path.exists(npe_large + "posterior.npz"):
+        runs.append((np.load(npe_large + "posterior.npz")["samples"], NPE_COL, "dashed", "NPE, 10M simulations"))
+    runs.append((np.load(fmpe_large + "fmpe_posterior.npz")["samples"], FMPE_COL, "dashed", "FMPE, 10M simulations"))
+    allz = [mc] + [r[0] for r in runs]
+    lo = np.min([np.percentile(z, 0.5, 0) for z in allz], axis=0)
+    hi = np.max([np.percentile(z, 99.5, 0) for z in allz], axis=0)
+    rng_ = [(l - 0.05 * (h - l), h + 0.05 * (h - l)) for l, h in zip(lo, hi)]
     plt.rcParams["font.size"] = 21
     kw = dict(bins=35, smooth=1.0, plot_datapoints=False, plot_density=False, levels=(0.68, 0.95), range=rng_,
-              labels=T.LABELS, label_kwargs={"fontsize": 21}, max_n_ticks=2, labelpad=0.12, fill_contours=False)
-    fig = corner.corner(b, color=MCMC_COL, hist_kwargs={"lw": 2.2, "density": True}, **kw)
-    corner.corner(a, color=NPE_COL, fig=fig, hist_kwargs={"lw": 2.2, "density": True}, **kw)
-    corner.corner(c, color=FMPE_COL, fig=fig, hist_kwargs={"lw": 2.2, "density": True}, **kw)
+              labels=T.LABELS, label_kwargs={"fontsize": 21}, max_n_ticks=2, labelpad=0.12)
+    fig = corner.corner(mc, color="#9a9a9a", fill_contours=True, contour_kwargs={"linewidths": 0},
+                        hist_kwargs={"lw": 0, "density": True, "histtype": "stepfilled", "alpha": 0.35}, **kw)
+    for z, col, ls, _ in runs:
+        corner.corner(z, color=col, fig=fig, fill_contours=False, no_fill_contours=True,
+                      contour_kwargs={"linestyles": ls, "linewidths": 2.0},
+                      hist_kwargs={"lw": 2.2, "density": True, "ls": "--" if ls == "dashed" else "-"}, **kw)
     n = len(T.NAMES)
     for k in range(n):
         ax = fig.axes[k * n + k]
@@ -193,11 +201,11 @@ def fmpe_corner(fmpe_dir=".render/data/fmpe/toy-10m/"):
     fig.set_size_inches(12, 12)
     for ax in fig.axes:
         ax.tick_params(labelsize=21)
-    handles = [plt.Line2D([], [], color=FMPE_COL, lw=3, label="FMPE, 10M simulations"),
-               plt.Line2D([], [], color=NPE_COL, lw=3, label="NPE, 500k simulations"),
-               plt.Line2D([], [], color=MCMC_COL, lw=3, label="MCMC"),
-               plt.Line2D([], [], color=TRUE_COL, lw=2, label=r"true $\theta$")]
-    fig.legend(handles=handles, loc="upper right", bbox_to_anchor=(0.97, 0.97), frameon=False, fontsize=21)
+    handles = [plt.Line2D([], [], color=c, lw=3, ls="--" if ls == "dashed" else "-", label=lab) for _, c, ls, lab in runs]
+    handles += [plt.matplotlib.patches.Patch(color="#9a9a9a", alpha=0.6, label="MCMC"),
+                plt.Line2D([], [], color=TRUE_COL, lw=2, label=r"true $\theta$")]
+    fig.legend(handles=handles, loc="upper right", bbox_to_anchor=(0.97, 0.97), frameon=False, fontsize=21,
+               handlelength=2.6)
     fig.savefig("figures/toy-fmpe-corner.png", dpi=100, bbox_inches="tight")
 
 
