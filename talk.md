@@ -18,6 +18,8 @@ background-size: cover
 
 Thank you for having us.
 
+Simulation-based inference brings three things to retrievals: simulators as realistic as needed, expensive physics run once and in parallel, and validation of every result.
+
 The tutorial rests on one idea. If we can simulate the data, we can infer the parameters that produced them, without evaluating the likelihood.
 
 ---
@@ -316,7 +318,7 @@ class: middle
 
 ## A minimal exoplanet simulator
 
-Instrument, $x \sim p(x | z)$: binned, with noise.
+Instrument, $x \sim p(x | z)$: binned, with noise, any noise we can simulate.
 
 .center[
 <video poster="figures/toy-walk-4.png" muted loop autoplay playsinline class="anim">
@@ -460,7 +462,7 @@ class: middle
 
 We simulate $N$ pairs $(\theta\_i, x\_i) \sim p(\theta, x)$ and minimize the empirical estimate of the loss,
 $$L(\phi) = \mathbb{E}\_{p(\theta, x)} \left[ -\log q\_\phi(\theta | x) \right] \approx \frac{1}{N} \sum\_{i=1}^{N} -\log q\_\phi(\theta\_i | x\_i),$$
-with the noise added on the fly.
+with the noise added on the fly. The simulations run in parallel, once.
 
 .center[
 <video poster="figures/toy-training.png" muted loop autoplay playsinline class="anim">
@@ -480,7 +482,7 @@ class: middle
 
 ## Amortization
 
-Once trained, the network gives the posterior of any new spectrum in a fraction of a second.
+Once trained, the network gives the posterior of any new spectrum in a fraction of a second. Testing it on thousands of spectra becomes affordable.
 
 .center[
 <video poster="figures/toy-gallery.png?v=3" muted loop autoplay playsinline class="anim">
@@ -846,9 +848,9 @@ class: black-slide, middle
 .punch[
 .punch-title[Summary]
 
-Inference requires a simulator, not a likelihood.
+Inference requires a simulator, not a likelihood, so the simulator can be as realistic as needed.
 
-A neural posterior estimator is trained once; it then gives the posterior of any spectrum in seconds.
+A neural posterior estimator is trained once; it then gives the posterior of any spectrum in seconds, which makes validation affordable.
 
 Calibration tests the network; posterior predictive checks test the model.
 
