@@ -726,7 +726,8 @@ def coverage(n_test=1000, n_samples=1000, seed=5):
 
 def coverage_anim(n_test=1000, n_samples=1000, n_rows=30, j=3, seed=5, FPS=24):
     """Left: 90% credible intervals of C/O for test cases, true value in or out. Right: expected coverage
-    computed from the cases seen so far, converging to the diagonal."""
+    computed from the cases seen so far, converging to the diagonal, with the 1/2/3 sigma bands expected for a
+    calibrated estimator from that many cases."""
     model = load_model()
     sim = T.Simulator(noisy=True, seed=seed)
     th = sim.sample_prior(n_test)
@@ -771,6 +772,12 @@ def coverage_anim(n_test=1000, n_samples=1000, n_rows=30, j=3, seed=5, FPS=24):
         emp = np.array([(ranks[:n] <= a).mean() for a in levels])
         axc.fill_between([0, 1], [0, 1], [1, 1], color=GREEN, alpha=0.08, lw=0)
         axc.fill_between([0, 1], [0, 0], [0, 1], color=NPE_COL, alpha=0.08, lw=0)
+        # 1/2/3 sigma bands of a calibrated estimator with n cases (as in Dax et al 2026, Fig. 13): the empirical
+        # coverage at level alpha is Binomial(n, alpha) / n, here in its Gaussian approximation
+        sd = np.sqrt(levels * (1 - levels) / n)
+        for k_sigma, a in [(3, 0.14), (2, 0.18), (1, 0.24)]:
+            axc.fill_between(levels, np.clip(levels - k_sigma * sd, 0, 1), np.clip(levels + k_sigma * sd, 0, 1),
+                             color="#555555", alpha=a, lw=0)
         axc.plot([0, 1], [0, 1], "--", color="#888", lw=2)
         axc.text(0.04, 0.9, "conservative", color=GREEN)
         axc.text(0.5, 0.06, "overconfident", color=NPE_COL)

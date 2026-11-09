@@ -529,8 +529,8 @@ class: middle
 A posterior is .bold[calibrated] if its 90% credible regions contain the true parameters 90% of the time, and likewise at every level.
 
 .center[
-<video poster="figures/toy-coverage.png" muted loop autoplay playsinline class="anim">
-<source src="figures/videos/toy-coverage.mp4" type="video/mp4">
+<video poster="figures/toy-coverage.png?v=2" muted loop autoplay playsinline class="anim">
+<source src="figures/videos/toy-coverage.mp4?v=2" type="video/mp4">
 </video>
 ]
 
@@ -542,7 +542,7 @@ Coverage is necessary but not sufficient, since the prior itself is calibrated. 
 
 The first check tests the network. Posteriors are cheap, so we compute a thousand of them for simulated spectra whose parameters we know.
 
-On the left, the 90% credible interval of the C/O ratio for each test case. Green intervals contain the true value, red ones miss it. On the right, the same count at every credibility level, the expected coverage. The curve lies on the diagonal, so the posteriors are calibrated. Above would be conservative, below overconfident.
+On the left, the 90% credible interval of the C/O ratio for each test case. Green intervals contain the true value, red ones miss it. On the right, the same count at every credibility level, the expected coverage. The gray bands show where a perfectly calibrated network would land by chance with this many cases, at one, two and three sigma. They narrow as cases accumulate. The curve stays within them, so the posteriors are calibrated. Above would be conservative, below overconfident.
 
 Coverage is necessary but not sufficient, since the prior is calibrated too. TARP, MIRA and L-C2ST are stronger tests.
 
