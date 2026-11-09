@@ -741,20 +741,6 @@ The vector field is trained by flow matching. We draw noise and a simulated pair
 
 class: middle
 
-.center.width-65[![](figures/toy-fmpe-corner.png)]
-
-.center[FMPE matches MCMC, with 20 times more simulations than NPE.]
-
-???
-
-The same observed spectrum as before. In purple, FMPE; in red, NPE; in grey, MCMC. FMPE follows MCMC closely, slightly more closely than NPE, whose tails are a little wide.
-
-The price is the simulation budget. With the 500k simulations used for NPE, the vector field memorized the training set and its posteriors were twice too wide. It took 10M simulations to get here. Flow matching pays off with many parameters and large budgets; on a small problem, NPE is the efficient choice.
-
----
-
-class: middle
-
 .avatars[![](figures/faces/gebhard.jpg)![](figures/faces/wildberger.jpg)![](figures/faces/maxdax.jpg)![](figures/faces/kofler.jpg)![](figures/faces/more.png)]
 
 <br>
