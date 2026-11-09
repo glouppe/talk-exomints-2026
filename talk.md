@@ -611,7 +611,7 @@ class: middle
 
 .center.width-100[![](figures/toy-misspec.png)]
 
-.center[Both posteriors are .bold[confident and wrong].]
+.center[Both posteriors are .bold[confident and wrong], because of misspecification.]
 
 .footnote[Detecting and handling misspecification: [Schmitt et al](https://arxiv.org/abs/2112.08866), 2023; [Ward et al](https://arxiv.org/abs/2210.06564), NeurIPS 2022.]
 
