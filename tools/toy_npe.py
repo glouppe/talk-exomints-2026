@@ -49,19 +49,35 @@ def _simulate_chunk(args):
 
 
 def simulate(n=100_000, chunk=2_000):
+    """With SHARD=s set (e.g. a Slurm array index), simulate shard s of size n into pairs-{s:03d}.npz, with seeds
+    disjoint from the other shards; otherwise write pairs.npz. Shard 0 has the same seeds as the unsharded run."""
     os.makedirs(OUT, exist_ok=True)
-    jobs = [(1000 + i, chunk) for i in range(n // chunk)]
+    shard = os.environ.get("SHARD")
+    s0 = 1000 + (int(shard) * (n // chunk) if shard is not None else 0)
+    jobs = [(s0 + i, chunk) for i in range(n // chunk)]
     t0 = time.time()
     with Pool(len(os.sched_getaffinity(0))) as pool:  # the CPUs actually allocated (Slurm), not the node's
         res = pool.map(_simulate_chunk, jobs)
     th = np.concatenate([r[0] for r in res]).astype(np.float32)
     f = np.concatenate([r[1] for r in res]).astype(np.float32)
     ok = np.all(np.isfinite(f), axis=1)
-    np.savez(OUT + "pairs.npz", theta=th[ok], f=f[ok])
+    np.savez(OUT + (f"pairs-{int(shard):03d}.npz" if shard is not None else "pairs.npz"), theta=th[ok], f=f[ok])
     print(f"{ok.sum()} pairs in {time.time() - t0:.0f} s")
 
 
 # ---------------------------------------------------------------- NPE
+
+def load_pairs():
+    """pairs.npz, or the concatenation of the shards pairs-*.npz (in shard order)."""
+    import glob
+    if os.path.exists(OUT + "pairs.npz"):
+        d = np.load(OUT + "pairs.npz")
+        return d["theta"], d["f"]
+    shards = sorted(glob.glob(OUT + "pairs-*.npz"))
+    ds = [np.load(p) for p in shards]
+    print(f"{len(shards)} shards", flush=True)
+    return np.concatenate([d["theta"] for d in ds]), np.concatenate([d["f"] for d in ds])
+
 
 def preprocess(x):
     """Spectra span orders of magnitude: asinh in units of the noise level."""

@@ -118,9 +118,10 @@ def train(epochs=int(os.environ.get("EPOCHS", 200)), batch=int(os.environ.get("B
     import torch
     torch.manual_seed(0)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
-    d = np.load(OUT + "pairs.npz")
-    th = torch.tensor(N.to_unit(d["theta"]), dtype=torch.float32, device=dev)
-    f = torch.tensor(d["f"], dtype=torch.float32, device=dev)
+    theta, flux = N.load_pairs()
+    th = torch.tensor(N.to_unit(theta), dtype=torch.float32, device=dev)
+    f = torch.tensor(flux, dtype=torch.float32, device=dev)
+    del theta, flux
     n = len(th)
     n_val = n // 20  # same split as NPE
     model = build().to(dev)
