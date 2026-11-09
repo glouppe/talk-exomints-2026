@@ -27,6 +27,7 @@ SIGMA = T.SIGMA_NOISE * T.Simulator.scale
 
 # Model: "cloudy" (default, 6 parameters) or "clear" (no cloud deck: log P_cloud fixed at the bottom, 5 parameters)
 MODEL = os.environ.get("TOY_MODEL", "cloudy")
+SEED = int(os.environ.get("SEED", 0))  # repetition seed for training, importance sampling and nested sampling
 KEEP = [0, 1, 2, 3, 4, 5] if MODEL == "cloudy" else [0, 1, 2, 3, 5]
 CLEAR_LOG_PC = 2.0
 LO, UP = T.LOWER[KEEP], T.UPPER[KEEP]
@@ -117,7 +118,7 @@ def from_unit(u):
 
 def train(epochs=int(os.environ.get("EPOCHS", 60)), batch=int(os.environ.get("BATCH", 512)), lr=1e-3):
     import torch
-    torch.manual_seed(0)
+    torch.manual_seed(SEED)
     dev = "cuda" if torch.cuda.is_available() else "cpu"
     d = np.load(OUT + "pairs.npz")
     th = torch.tensor(to_unit(d["theta"]), dtype=torch.float32, device=dev)
@@ -215,7 +216,7 @@ def mcmc(n_chains=8, n_steps=20_000, burn=5_000):
 
 # ---------------------------------------------------------------- importance sampling
 
-def isample(n=50_000, seed=3):
+def isample(n=50_000, seed=3 + SEED):
     """Reweight NPE samples with the exact (toy) likelihood: corrected posterior, efficiency, evidence.
 
     The likelihood is unnormalized (-0.5 r^2), as in the nested sampling run, so log Z values are comparable."""
@@ -282,7 +283,7 @@ def nested(nlive=500, n_cores=int(os.environ.get("NS_CORES", len(os.sched_getaff
     t0 = time.time()
     with Pool(n_cores, initializer=_ns_init, initargs=(x_obs,)) as pool:
         sampler = dynesty.NestedSampler(_ns_loglike, _ns_prior, len(LO), nlive=nlive, pool=pool, queue_size=n_cores,
-                                        rstate=np.random.default_rng(0))
+                                        rstate=np.random.default_rng(SEED))
         sampler.run_nested(dlogz=0.1, print_progress=False)
     res = sampler.results
     dt = time.time() - t0

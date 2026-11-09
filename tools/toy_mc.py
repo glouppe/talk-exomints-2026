@@ -25,7 +25,9 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(__file__))
 import toy_exo as T
 
-D = ".render/data/toy-mc/"
+D = os.environ.get("MC_DIR", ".render/data/toy-mc/")
+SEED = os.environ.get("SEED")  # repetitions: classifier seed; outputs get a -s<SEED> suffix
+SUF = f"-s{SEED}" if SEED is not None else ""
 SIGMA = T.SIGMA_NOISE * T.Simulator.scale
 MODELS, OBS = ["cloudy", "clear"], ["cloudy", "clear"]
 COL = {"cloudy": "#d1495b", "clear": "#1f5fae"}
@@ -53,7 +55,7 @@ def evidence():
 def classify(n_per_model=400_000, epochs=30, batch=1024):
     import torch
     import torch.nn as nn
-    torch.manual_seed(0)
+    torch.manual_seed(int(SEED or 0))
     xs, ys = [], []
     for k, m in enumerate(MODELS):
         f = np.load(f"{D}pairs-{m}.npz")["f"][:n_per_model]
@@ -89,13 +91,13 @@ def classify(n_per_model=400_000, epochs=30, batch=1024):
             lv = net(pre(xv)).squeeze(-1)
             acc = ((lv > 0).float() == y[:n_val]).float().mean().item()
             print(f"epoch {ep:2d}  valid loss {bce(lv, y[:n_val]).item():.4f}  accuracy {acc:.3f}", flush=True)
-    torch.save(net.state_dict(), D + "classifier.pt")
+    torch.save(net.state_dict(), D + f"classifier{SUF}.pt")
     with torch.no_grad():
         for o in OBS:
             x = torch.tensor(np.load(f"{D}xobs-{o}.npz")["x_obs"], dtype=torch.float32)
             logit = net(pre(x)).item()  # log p(clear|x) / p(cloudy|x), equal prior odds
             print(f"obs {o}: log B(cloudy:clear) from classifier = {-logit:.2f}")
-            np.save(f"{D}classifier-logB-{o}.npy", -logit)
+            np.save(f"{D}classifier-logB-{o}{SUF}.npy", -logit)
 
 
 # ---------------------------------------------------------------- figures
