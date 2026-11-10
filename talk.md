@@ -895,15 +895,13 @@ class: middle
 
 ## Backup: 30 parameters
 
-A free retrieval from 0.8 to 5 μm, with a 10-node temperature profile, 15 molecules and a non-grey cloud. Both networks get 1M simulations; TSNPE spends them in 5 rounds, around the observation.
+.center.width-70[![](figures/t30-corner-full.png)]
 
-.center.width-60[![](figures/t30-corner.png)]
-
-.footnote[TSNPE: truncated sequential NPE, [Deistler et al](https://arxiv.org/abs/2210.04815), NeurIPS 2022.]
+.footnote[TSNPE: truncated sequential NPE, [Deistler et al](https://arxiv.org/abs/2210.04815), NeurIPS 2022. Free retrieval, 0.8 to 5 μm.]
 
 ???
 
-A harder version of our toy, closer to a real free retrieval. Thirty parameters, many of them barely constrained, like the trace molecules.
+A harder version of our toy, closer to a real free retrieval. Thirty parameters: a temperature profile with ten nodes, fifteen molecules and a non-grey cloud, from 0.8 to 5 microns. Many are barely constrained, like the trace molecules. Each network gets one million simulations. TSNPE spends them in five rounds, around the observation.
 
 Amortized NPE gets the broad picture, but it is off on the temperature and on the trace species. TSNPE trains on the observation in rounds, and each round simulates only where the posterior is. With importance sampling on top, it follows nested sampling closely.
 
@@ -913,17 +911,13 @@ One honest caveat. TSNPE puts more mass than nested sampling in a tail at low ab
 
 class: middle
 
-## Backup: 30 parameters, fit and cost
+## Backup: 30 parameters, posterior predictive check
 
-.center.width-70[![](figures/t30-chi2.png)]
-
-TSNPE fits as well as nested sampling, with a median $\chi^2$ of 137 against 218 for amortized NPE. Importance sampling works for TSNPE, with an effective sample size of 2387 out of 50,000, and fails for amortized NPE, with 6.
-
-Nested sampling took 13.8M likelihood calls, 3.4 hours on 64 cores. Each network used 1M simulations.
+.center.width-100[![](figures/t30-ppc.png)]
 
 ???
 
-How well does each posterior fit the data? For each method, we simulate from the posterior and compute the chi-square of the observation. TSNPE and nested sampling sit where the truth sits. Amortized NPE fits worse.
+How well does each posterior fit the data? We simulate from each posterior and compare with the observation. The residuals of amortized NPE spread at short wavelengths, and its chi-square is far too high. TSNPE and nested sampling sit where the truth sits.
 
 Importance sampling tells the same story. It works for TSNPE, and collapses for amortized NPE.
 
