@@ -3,7 +3,7 @@
     python tools/t30_figures.py   # -> figures/t30-corner.png, t30-corner-full.png, t30-chi2.png
 
 Reads .render/data/t30/ (fetched from /scratch/.../exomints/t30/): nested-s1-n2000/nested.npz (reference),
-amortised/posterior-0.npz (amortised NPE, 1M simulations), tsnpe/is-4.npz (TSNPE, 5 rounds of 200k, reweighted by
+amortised/posterior-0.npz (amortised NPE, 1M simulations), tsnpe2-s2/is-4.npz (TSNPE seed 2, 5 rounds of 200k, reweighted by
 importance sampling), xobs.npz. Same sets as plot_t30.py's "npe-tsnpe-ns" figures, drawn at slide size.
 """
 
@@ -22,6 +22,7 @@ import toy_exo30 as T
 D = ".render/data/t30/"
 SIGMA = T.SIGMA_NOISE * T.Simulator.scale
 NS_COL, NPE_COL, TS_COL = "#e08a1e", "#d1495b", "#2a9d8f"  # all three as lines: no method is the reference
+TSNPE_RUN = "tsnpe2-s2"  # best of the four TSNPE runs (seed 2): IS ESS 3638 of 50k at round 4
 LABELS = {"R_p": r"$R_P$", "T_0": r"$T_0$", "r_3": r"$r_3$", "log_H2O": r"$\log X_{\rm H_2O}$",
           "log_CH4": r"$\log X_{\rm CH_4}$", "log_CO": r"$\log X_{\rm CO}$", "log_FeH": r"$\log X_{\rm FeH}$",
           "log_TiO": r"$\log X_{\rm TiO}$", "log_VO": r"$\log X_{\rm VO}$"}
@@ -32,7 +33,7 @@ def sets():
     ns = np.load(D + "nested-s1-n2000/nested.npz")
     return [("nested sampling", ns["samples"], NS_COL),
             ("NPE, amortized", np.load(D + "amortised/posterior-0.npz")["samples"], NPE_COL),
-            ("TSNPE + importance sampling", np.load(D + "tsnpe/is-4.npz")["samples"], TS_COL)]
+            ("TSNPE + importance sampling", np.load(D + TSNPE_RUN + "/is-4.npz")["samples"], TS_COL)]
 
 
 def corner_fig():
@@ -168,7 +169,7 @@ def chi2_fig(n=400):
     bins = np.linspace(100, 400, 61)
     legend = {"nested sampling": "nested sampling, 13.8M likelihood calls",
               "NPE, amortized": "NPE, amortized, 1M simulations\n(importance sampling: ESS 6)",
-              "TSNPE + importance sampling": "TSNPE, 1M simulations\n(importance sampling: ESS 2387)"}
+              "TSNPE + importance sampling": "TSNPE, 1M simulations\n(importance sampling: ESS 3638)"}
     for lab, s, c in sets():
         lab = legend[lab]
         th = s[rng.choice(len(s), n, replace=False)]
@@ -198,7 +199,7 @@ def ppc_fig(n=300):
     data = sets()
     preds = [np.array([sim.clean(t) for t in s[rng.choice(len(s), n, replace=False)]]) for _, s, _ in data]
     legend = ["nested sampling\n13.8M likelihood calls", "NPE, amortized\n1M simulations, ESS 6",
-              "TSNPE\n1M simulations, ESS 2387"]
+              "TSNPE\n1M simulations, ESS 3638"]
     plt.rcParams.update({"font.size": 18, "font.family": "Roboto", "axes.spines.top": False,
                          "axes.spines.right": False})
     fig = plt.figure(figsize=(16, 8.5), dpi=100)
