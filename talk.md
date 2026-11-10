@@ -893,7 +893,7 @@ Thank you.
 
 class: middle
 
-## Backup: 30 parameters
+## Backup: 30-parameter retrieval
 
 .center.width-70[![](figures/t30-corner-full.png)]
 
@@ -911,7 +911,7 @@ One honest caveat. TSNPE puts more mass than nested sampling in a tail at low ab
 
 class: middle
 
-## Backup: 30 parameters, posterior predictive check
+## Backup: 30-parameter retrieval
 
 .center.width-100[![](figures/t30-ppc.png)]
 
