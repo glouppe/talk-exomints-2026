@@ -1,6 +1,7 @@
 # Export the deck to PDF: each slide captured at 2x via the Chrome DevTools protocol, videos replaced by
 # their poster frame, then assembled into one PDF.
 # Usage (with `python3 -m http.server 8765` serving the folder): pdf.py OUT.pdf N_SLIDES
+import os
 import base64, io, json, subprocess, sys, time, urllib.request
 import websocket
 from PIL import Image

@@ -1,5 +1,6 @@
 # Screenshot remark slides via the Chrome DevTools protocol.
 # Usage: shot.py OUTDIR SLIDE [SLIDE ...]
+import os
 import base64, json, subprocess, sys, time, urllib.request
 import websocket
 
@@ -24,7 +25,7 @@ try:
             msg = json.loads(ws.recv())
             if msg.get("id") == n:
                 return msg.get("result", {})
-    call("Page.navigate", url="http://localhost:8765/#" + slides[0])
+    call("Page.navigate", url="http://localhost:" + os.environ.get("DECK_PORT", "8765") + "/#" + slides[0])
     time.sleep(5)
     for s in slides:
         call("Runtime.evaluate", expression="location.hash = \"#%s\"" % s)

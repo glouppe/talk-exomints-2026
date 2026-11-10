@@ -1,4 +1,5 @@
 # Measure displayed width of the main image/video of given slides (CSS px), via Chrome DevTools.
+import os
 import json, subprocess, sys, time, urllib.request
 import websocket
 slides = sys.argv[1:]
@@ -21,7 +22,7 @@ try:
             m = json.loads(ws.recv())
             if m.get("id") == n:
                 return m.get("result", {})
-    call("Page.navigate", url="http://localhost:8765/#" + slides[0]); time.sleep(5)
+    call("Page.navigate", url="http://localhost:" + os.environ.get("DECK_PORT", "8765") + "/#" + slides[0]); time.sleep(5)
     for s in slides:
         call("Runtime.evaluate", expression='location.hash = "#%s"' % s); time.sleep(1.2)
         js = """(() => { const sl = document.querySelector('.remark-visible .remark-slide-content');
