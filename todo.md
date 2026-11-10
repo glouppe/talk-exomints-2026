@@ -6,13 +6,13 @@ This file is the state of the project. Read it first at the start of every sessi
 
 ## State
 
-- **Phase:** all five topics drafted, finishing pass done; 43 counted slides (Gilles: don't trim for count). Remaining (optional): reporting checklist (T4.5), split with Max (Q2), reading list pass with Max.
+- **Phase:** DONE. Talk given at Exomints 2026 on 2026-11-10 ("went super well"). Project closed; open items below are left as-is for reference.
 - **Current deck (displayed numbers; 18 has a second build):** 1 title · 2–4 ocean · 5–7 gravitational waves · 8–10 exoplanets · 11 inverse problems · 12 generation/inference table · 13–16 toy walk-through · 17 prior predictive check (J−K) · 18 galaxy (+ NPE/FMPE build) · 19 NPE loss · 20 NPE pipeline (+ discrete change of variables) · 21 embedding network (animation: six spectra through the MLP, real activations, `toy_results.py embedding_anim`; saliency figure `toy-embedding.png` made but unused) · 22 training (loss + empirical estimator) · 23 amortization gallery · 24 observed spectrum · 25 NPE vs MCMC vs NS corner · 26 calibration · 27 trust crisis · 28 posterior predictive check · 29 when the model is wrong · 30 confident and wrong · 31 Vasist et al 2023 · 32 WISE 1738 · 33 discrete vs continuous flows · 34 FMPE intuition · 35 FMPE equations · 36 Gebhard et al 2025 · 37 importance sampling · 38 IS corner · 39 model comparison · 40 Bayes factor (error bars) · 41 summary · 42 reading list · 43 closing.
-- **Next action:** none requested.
+- **Next action:** none (project closed).
 - **Font rule (Gilles):** figures must appear on screen at the same size as slide 15 (walk-through: 20 pt in 1600 px shown at 852 px ≈ 15 px labels, 20 px titles). Measure displayed widths with `.render/measure.py <slides>` and set each figure's font size accordingly. Exception: the galaxy (labels kept small for density).
 - **Blocked on Max:** split of the topics (Q2), literature map (T3.4), his photo choice (K7). Possibly: whether he presents FMPE (29–31) and model comparison (34–36).
 - **Regenerating toy figures** (TOY_OUT=.render/data/toy-big/, venv `.render/venv`): `toy_npe.py observe`; `toy_results.py {xobs,prior_pc,corner,gallery,coverage_anim,is_anim,is_corner}`; `npe_architecture.py`; `toy_training.py`; `~/anaconda3/bin/python tools/toy_walkthrough.py --ppc`. Bump `?v=` on changed media.
-- **Last updated:** 2026-11-07.
+- **Last updated:** 2026-11-10.
 
 ## Decisions
 
