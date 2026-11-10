@@ -21,7 +21,7 @@ import toy_exo30 as T
 
 D = ".render/data/t30/"
 SIGMA = T.SIGMA_NOISE * T.Simulator.scale
-NS_COL, NPE_COL, TS_COL = "#9a9a9a", "#d1495b", "#2a9d8f"
+NS_COL, NPE_COL, TS_COL = "#e08a1e", "#d1495b", "#2a9d8f"  # all three as lines: no method is the reference
 LABELS = {"R_p": r"$R_P$", "T_0": r"$T_0$", "r_3": r"$r_3$", "log_H2O": r"$\log X_{\rm H_2O}$",
           "log_CH4": r"$\log X_{\rm CH_4}$", "log_CO": r"$\log X_{\rm CO}$", "log_FeH": r"$\log X_{\rm FeH}$",
           "log_TiO": r"$\log X_{\rm TiO}$", "log_VO": r"$\log X_{\rm VO}$"}
@@ -99,12 +99,10 @@ def corner_full():
     plt.rcParams.update({"font.size": 14, "font.family": "Roboto"})
     kw = dict(bins=25, smooth=1.2, plot_datapoints=False, plot_density=False, levels=(0.68, 0.95), range=rng_,
               labels=labels, label_kwargs={"fontsize": 17}, max_n_ticks=0, labelpad=0.2)
-    s0 = data[0][1]
-    fig = corner.corner(s0, color=NS_COL, fill_contours=True, contour_kwargs={"linewidths": 0},
-                        hist_kwargs={"lw": 0, "density": True, "histtype": "stepfilled", "alpha": 0.45}, **kw)
-    for lab, s, c in data[1:]:
-        corner.corner(s, color=c, fig=fig, fill_contours=False, no_fill_contours=True,
-                      contour_kwargs={"linewidths": 0.9}, hist_kwargs={"lw": 1.2, "density": True}, **kw)
+    fig = None
+    for lab, s, c in data:
+        fig = corner.corner(s, color=c, fig=fig, fill_contours=False, no_fill_contours=True,
+                            contour_kwargs={"linewidths": 0.9}, hist_kwargs={"lw": 1.2, "density": True}, **kw)
     n = len(T.NAMES)
     for k in range(n):
         ax = fig.axes[k * n + k]
@@ -113,7 +111,7 @@ def corner_full():
         ax.set_ylim(0, ax.get_ylim()[1] * 1.05)
     corner.overplot_lines(fig, T.THETA_STAR, color="#777", lw=0.4)
     fig.set_size_inches(22, 22)
-    handles = [plt.matplotlib.patches.Patch(color=NS_COL, alpha=0.6, label="nested sampling"),
+    handles = [plt.Line2D([], [], color=NS_COL, lw=4, label="nested sampling"),
                plt.Line2D([], [], color=NPE_COL, lw=4, label="NPE, amortized"),
                plt.Line2D([], [], color=TS_COL, lw=4, label="TSNPE + importance sampling"),
                plt.Line2D([], [], color="#222", lw=2, label=r"true $\theta$")]
@@ -141,10 +139,7 @@ def marginals_fig(ncol=6):
             continue
         bins = np.linspace(T.LOWER[i], T.UPPER[i], 41)
         for lab, s, c in data:
-            if c == NS_COL:
-                ax.hist(s[:, i], bins, density=True, color=c, alpha=0.55, lw=0)
-            else:
-                ax.hist(s[:, i], bins, density=True, histtype="step", color=c, lw=1.8)
+            ax.hist(s[:, i], bins, density=True, histtype="step", color=c, lw=1.8)
         ax.axvline(T.THETA_STAR[i], color="#222", lw=1.2)
         ax.set_xlim(T.LOWER[i], T.UPPER[i])
         ax.set_yticks([])
@@ -152,7 +147,7 @@ def marginals_fig(ncol=6):
         for sp in ("top", "right", "left"):
             ax.spines[sp].set_visible(False)
         ax.set_title(names[i], fontsize=18, pad=4)
-    handles = [plt.matplotlib.patches.Patch(color=NS_COL, alpha=0.6, label="nested sampling"),
+    handles = [plt.Line2D([], [], color=NS_COL, lw=3, label="nested sampling"),
                plt.Line2D([], [], color=NPE_COL, lw=3, label="NPE, amortized"),
                plt.Line2D([], [], color=TS_COL, lw=3, label="TSNPE + importance sampling"),
                plt.Line2D([], [], color="#222", lw=1.5, label=r"true $\theta$")]
@@ -213,7 +208,7 @@ def ppc_fig(n=300):
     for (lab, _, c), f in zip(data, preds):
         rep = f + SIGMA * rng.standard_normal(f.shape)
         lo, hi = np.quantile(rep, [0.025, 0.975], axis=0)
-        ax.fill_between(wl, lo, hi, color=c, alpha=0.35 if c == NS_COL else 0.18, lw=0)
+        ax.fill_between(wl, lo, hi, color=c, alpha=0.15, lw=0)
         ax.plot(wl, np.median(f, 0), color=c, lw=1.6)
     ax.errorbar(wl, x, yerr=SIGMA, fmt="o", ms=3, color="#222", elinewidth=0.8, zorder=5)
     ax.set_ylabel("Flux")
@@ -226,7 +221,7 @@ def ppc_fig(n=300):
         lo, med, hi = np.quantile(r, [0.16, 0.5, 0.84], axis=0)
         axr.axhspan(-2, 2, color="#eeeeee", lw=0)
         axr.fill_between(wl, lo, hi, color=c, alpha=0.4, lw=0)
-        axr.plot(wl, med, color=c if c != NS_COL else "#666", lw=1.0)
+        axr.plot(wl, med, color=c, lw=1.0)
         axr.axhline(0, color="#999", lw=0.8)
         axr.set_ylim(-4.5, 4.5)
         axr.set_yticks([-3, 0, 3])
@@ -238,10 +233,7 @@ def ppc_fig(n=300):
     bins = np.linspace(100, 400, 61)
     for (lab, _, c), f, leg in zip(data, preds, legend):
         chi = np.sum(((x - f) / SIGMA) ** 2, 1)
-        if c == NS_COL:
-            axc.hist(chi, bins, color=c, alpha=0.55, density=True, label=leg, orientation="horizontal")
-        else:
-            axc.hist(chi, bins, histtype="step", lw=2.5, color=c, density=True, label=leg, orientation="horizontal")
+        axc.hist(chi, bins, histtype="step", lw=2.5, color=c, density=True, label=leg, orientation="horizontal")
     chi_true = np.sum(((x - sim.clean(T.THETA_STAR)) / SIGMA) ** 2)
     axc.axhline(chi_true, color="#222", lw=1.5, ls="--")
     axc.text(0.98, chi_true + 4, r"true $\theta$", transform=axc.get_yaxis_transform(), ha="right", fontsize=16)

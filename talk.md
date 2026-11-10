@@ -896,7 +896,7 @@ class: middle
 
 ## Backup: 30-parameter retrieval
 
-.center.width-70[![](figures/t30-corner-full.png)]
+.center.width-70[![](figures/t30-corner-full.png?v=2)]
 
 .footnote[TSNPE: truncated sequential NPE, [Deistler et al](https://arxiv.org/abs/2210.04815), NeurIPS 2022. Free retrieval, 0.8 to 5 μm.]
 
@@ -904,7 +904,7 @@ class: middle
 
 A harder version of our toy, closer to a real free retrieval. Thirty parameters: a temperature profile with ten nodes, fifteen molecules and a non-grey cloud, from 0.8 to 5 microns. Many are barely constrained, like the trace molecules. Each network gets one million simulations. TSNPE spends them in five rounds, around the observation.
 
-Amortized NPE gets the broad picture, but it is off on the temperature and on the trace species. TSNPE trains on the observation in rounds, and each round simulates only where the posterior is. With importance sampling on top, it follows nested sampling closely.
+Amortized NPE gets the broad picture, but it is off on the temperature and on the trace species. TSNPE trains on the observation in rounds, and each round simulates only where the posterior is. With importance sampling on top, it agrees closely with nested sampling.
 
 One honest caveat. TSNPE puts more mass than nested sampling in a tail at low abundances, about 19% against 6%. Which one is right would need a third reference.
 
@@ -913,7 +913,7 @@ One honest caveat. TSNPE puts more mass than nested sampling in a tail at low ab
 count: false
 class: middle
 
-.center.width-100[![](figures/t30-marginals.png)]
+.center.width-100[![](figures/t30-marginals.png?v=2)]
 
 ???
 
@@ -926,7 +926,7 @@ For the barely constrained temperature ratios, the networks are close to flat, a
 count: false
 class: middle
 
-.center.width-100[![](figures/t30-ppc.png)]
+.center.width-100[![](figures/t30-ppc.png?v=2)]
 
 ???
 
