@@ -891,6 +891,7 @@ Thank you.
 
 ---
 
+count: false
 class: middle
 
 ## Backup: 30-parameter retrieval
@@ -909,6 +910,7 @@ One honest caveat. TSNPE puts more mass than nested sampling in a tail at low ab
 
 ---
 
+count: false
 class: middle
 
 ## Backup: 30-parameter retrieval
