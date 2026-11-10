@@ -122,6 +122,46 @@ def corner_full():
     plt.close(fig)
 
 
+def marginals_fig(ncol=6):
+    """Gallery of the 30 one-dimensional marginals, each over its full prior range."""
+    import re
+    data = sets()
+    sub = lambda t: re.sub(r"(\d)", r"$_{\1}$", t)
+    short = {"log_g": "log g", "R_p": "$R_p$", "T_0": "$T_0$", "log_Pc": "log $P_c$", "log_tau_c": r"log $\tau_c$",
+             "alpha_c": r"$\alpha_c$"}
+    names = [short.get(n, f"$r_{n[2:]}$" if n.startswith("r_") else sub(n[4:]) if n.startswith("log_") else n)
+             for n in T.NAMES]
+    n = len(T.NAMES)
+    nrow = int(np.ceil(n / ncol))
+    plt.rcParams.update({"font.size": 16, "font.family": "Roboto"})
+    fig, axes = plt.subplots(nrow, ncol, figsize=(16, 2.25 * nrow), dpi=100)
+    for i, ax in enumerate(axes.ravel()):
+        if i >= n:
+            ax.axis("off")
+            continue
+        bins = np.linspace(T.LOWER[i], T.UPPER[i], 41)
+        for lab, s, c in data:
+            if c == NS_COL:
+                ax.hist(s[:, i], bins, density=True, color=c, alpha=0.55, lw=0)
+            else:
+                ax.hist(s[:, i], bins, density=True, histtype="step", color=c, lw=1.8)
+        ax.axvline(T.THETA_STAR[i], color="#222", lw=1.2)
+        ax.set_xlim(T.LOWER[i], T.UPPER[i])
+        ax.set_yticks([])
+        ax.set_xticks([])
+        for sp in ("top", "right", "left"):
+            ax.spines[sp].set_visible(False)
+        ax.set_title(names[i], fontsize=18, pad=4)
+    handles = [plt.matplotlib.patches.Patch(color=NS_COL, alpha=0.6, label="nested sampling"),
+               plt.Line2D([], [], color=NPE_COL, lw=3, label="NPE, amortized"),
+               plt.Line2D([], [], color=TS_COL, lw=3, label="TSNPE + importance sampling"),
+               plt.Line2D([], [], color="#222", lw=1.5, label=r"true $\theta$")]
+    fig.legend(handles=handles, loc="lower center", ncol=4, frameon=False, fontsize=17, bbox_to_anchor=(0.5, -0.03))
+    fig.tight_layout(rect=(0, 0.04, 1, 1))
+    fig.savefig("figures/t30-marginals.png", dpi=100, bbox_inches="tight")
+    plt.close(fig)
+
+
 def chi2_fig(n=400):
     """χ² of the observation against posterior predictive draws, one histogram per method."""
     x = np.load(D + "xobs.npz")["x_obs"]
@@ -220,5 +260,6 @@ def ppc_fig(n=300):
 if __name__ == "__main__":
     corner_fig()
     corner_full()
+    marginals_fig()
     chi2_fig()
     ppc_fig()

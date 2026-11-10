@@ -913,6 +913,19 @@ One honest caveat. TSNPE puts more mass than nested sampling in a tail at low ab
 count: false
 class: middle
 
+.center.width-100[![](figures/t30-marginals.png)]
+
+???
+
+The same three posteriors, one parameter at a time, each over its full prior range. The molecules that shape the spectrum, like water, methane or carbon monoxide, are sharply constrained, and all methods agree. The trace molecules are upper limits, where amortized NPE drifts and TSNPE follows nested sampling.
+
+For the barely constrained temperature ratios, the networks are close to flat, as the prior. Nested sampling is tilted. That is another hint that nested sampling struggles in thirty dimensions.
+
+---
+
+count: false
+class: middle
+
 .center.width-100[![](figures/t30-ppc.png)]
 
 ???
